@@ -1,0 +1,2506 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高雄醫學大學附設中和紀念醫院 護理部 學術資訊網</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts - Inter & Noto Sans TC -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f8fafc;
+        }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Continuous Running Marquee Animation */
+        @keyframes marquee {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .animate-marquee-slow {
+            animation: marquee 35s linear infinite;
+        }
+        .animate-marquee-normal {
+            animation: marquee 22s linear infinite;
+        }
+        .animate-marquee-fast {
+            animation: marquee 12s linear infinite;
+        }
+
+        @keyframes marquee-vertical-down {
+            0% { transform: translateY(-50%); }
+            100% { transform: translateY(0%); }
+        }
+
+        .animate-marquee-vertical-down {
+            animation: marquee-vertical-down 16s linear infinite;
+        }
+
+        .marquee-container:hover .marquee-content,
+        .marquee-vertical-container:hover .marquee-vertical-content {
+            animation-play-state: paused;
+        }
+
+        /* Vue Transition Animations */
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.25s ease;
+        }
+        .fade-enter-from, .fade-leave-to {
+            opacity: 0;
+        }
+
+        .slide-over-enter-active, .slide-over-leave-active {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .slide-over-enter-from, .slide-over-leave-to {
+            transform: translateX(100%);
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-teal-500 selection:text-white">
+
+    <div id="app" class="min-h-screen flex flex-col justify-between">
+        
+        <div>
+            <header class="bg-gradient-to-r from-teal-900 via-teal-800 to-slate-900 text-white shadow-md relative overflow-hidden">
+                <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight">
+                            高雄醫學大學附設中和紀念醫院<br>
+                            <span class="text-teal-300">護理部 學術資訊網</span>
+                        </h1>
+                    </div>
+
+                    <!-- Header Quick Controls -->
+                    <div class="flex items-center gap-3 self-start md:self-auto">
+                        <button 
+                            @click="showAdminModal = true" 
+                            title="網頁內容維護"
+                            aria-label="網頁內容維護"
+                            class="bg-white/10 hover:bg-white/20 border border-white/20 text-white p-2.5 rounded-xl backdrop-blur-xs transition flex items-center justify-center shadow-xs cursor-pointer"
+                        >
+                            <i class="fa-solid fa-gear text-amber-300 text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div v-if="marqueeSettings && marqueeSettings.enabled && marqueeList.length > 0" class="bg-amber-50 border-b border-amber-200/80 text-amber-900 text-base py-2.5 px-4 shadow-2xs relative z-20">
+                <div class="max-w-7xl mx-auto flex items-center gap-3">
+                    <span class="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-md shrink-0 flex items-center gap-1 shadow-2xs">
+                        <i class="fa-solid fa-bullhorn text-xs"></i> 最新公告
+                    </span>
+                    <div class="overflow-hidden relative flex-grow marquee-container">
+                        <div class="whitespace-nowrap flex gap-12 font-semibold" :class="marqueeSpeedClass">
+                            <span v-for="(msg, idx) in marqueeList" :key="'m1-'+idx" class="inline-flex items-center gap-2">
+                                <i class="fa-solid fa-award text-amber-600"></i> {{ msg }}
+                            </span>
+                            <!-- Duplicate for continuous loop -->
+                            <span v-for="(msg, idx) in marqueeList" :key="'m2-'+idx" class="inline-flex items-center gap-2">
+                                <i class="fa-solid fa-award text-amber-600"></i> {{ msg }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <!-- Search Box (Left 50%) -->
+                    <div class="bg-white rounded-xl shadow-xs border border-slate-200/80 p-4 sm:p-5 flex flex-col justify-center">
+                        <label class="block text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
+                            <i class="fa-solid fa-magnifying-glass text-teal-600"></i> 期刊與文體檢索
+                        </label>
+                        <div class="relative w-full">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input 
+                                v-model="searchQuery" 
+                                type="text" 
+                                placeholder="搜尋期刊名稱、ISSN、學會名稱或文體關鍵字 (如：個案報告、行政專案)..." 
+                                class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500 text-xs sm:text-sm bg-slate-50/50"
+                            >
+                            <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <i class="fa-solid fa-circle-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Honor Roll / 榮譽榜 (Right 50%) -->
+                    <div class="bg-white rounded-xl shadow-xs border border-slate-200/80 p-4 sm:p-5">
+                        <div class="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
+                            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-trophy text-amber-500"></i> 榮譽榜
+                            </h3>
+                        </div>
+                        
+                        <div class="h-[110px] overflow-hidden relative marquee-vertical-container">
+                            <div v-if="honorRollList.length > 0" class="marquee-vertical-content flex flex-col gap-2.5 animate-marquee-vertical-down">
+                                <!-- First Pass -->
+                                <div v-for="item in honorRollList" :key="'h1-'+item.id" class="flex items-center gap-3 p-2 rounded-lg bg-slate-50/80 border border-slate-100 hover:border-amber-200 transition shrink-0">
+                                    <img 
+                                        :src="item.photo" 
+                                        :alt="item.name" 
+                                        class="w-10 h-10 rounded-full object-cover border border-amber-300 shrink-0"
+                                        @error="(e) => e.target.src='https://placehold.co/100x100/334155/ffffff?text=' + encodeURIComponent(item.name[0] || '護')"
+                                    >
+                                    <div class="min-w-0 flex-grow text-xs">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-bold text-slate-800">{{ item.name }}</span>
+                                            <span class="text-[10px] bg-teal-100 text-teal-800 px-1.5 py-0.2 rounded font-semibold">{{ item.unit }}</span>
+                                            <span v-if="item.title" class="text-[10px] text-slate-400">{{ item.title }}</span>
+                                        </div>
+                                        <p class="text-slate-600 text-[11px] truncate font-medium mt-0.5" :title="item.award">
+                                            <i class="fa-solid fa-award text-amber-500 mr-1"></i>{{ item.award }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <!-- Second Pass for Continuous Loop -->
+                                <div v-for="item in honorRollList" :key="'h2-'+item.id" class="flex items-center gap-3 p-2 rounded-lg bg-slate-50/80 border border-slate-100 hover:border-amber-200 transition shrink-0">
+                                    <img 
+                                        :src="item.photo" 
+                                        :alt="item.name" 
+                                        class="w-10 h-10 rounded-full object-cover border border-amber-300 shrink-0"
+                                        @error="(e) => e.target.src='https://placehold.co/100x100/334155/ffffff?text=' + encodeURIComponent(item.name[0] || '護')"
+                                    >
+                                    <div class="min-w-0 flex-grow text-xs">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-bold text-slate-800">{{ item.name }}</span>
+                                            <span class="text-[10px] bg-teal-100 text-teal-800 px-1.5 py-0.2 rounded font-semibold">{{ item.unit }}</span>
+                                            <span v-if="item.title" class="text-[10px] text-slate-400">{{ item.title }}</span>
+                                        </div>
+                                        <p class="text-slate-600 text-[11px] truncate font-medium mt-0.5" :title="item.award">
+                                            <i class="fa-solid fa-award text-amber-500 mr-1"></i>{{ item.award }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-else class="text-center py-8 text-slate-400 text-xs">
+                                目前暫無榮譽榜資料
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-xs border border-slate-200 p-5 mb-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 mb-4 border-b border-slate-100">
+                        <div class="flex items-center gap-2.5">
+                            <div class="p-2 bg-amber-50 text-amber-600 rounded-lg">
+                                <i class="fa-solid fa-calendar-check text-xl"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                                    學術研討會徵稿
+                                    <span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-0.5 rounded-full font-bold">{{ activeConferencesCount }} 則徵稿中</span>
+                                </h2>
+                                <p class="text-xs text-slate-500">各大護理學會與醫學中心研討會最新徵稿時程與發表型式</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Conferences Cards Grid -->
+                    <div v-if="conferences.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div v-for="conf in conferences" :key="conf.id" class="bg-slate-50/70 rounded-xl border border-slate-200 p-4 hover:shadow-md hover:border-amber-300/80 transition-all duration-200 flex flex-col justify-between space-y-3">
+                            <div>
+                                <div class="flex items-start justify-between gap-2 mb-2">
+                                    <span 
+                                        :class="getConferenceStatus(conf) === '徵稿截止' ? 'bg-slate-200 text-slate-600 border-slate-300' : 'bg-amber-500/10 text-amber-800 border-amber-300/50'" 
+                                        class="border text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                    >
+                                        {{ getConferenceStatus(conf) }}
+                                    </span>
+                                    <span class="text-[11px] font-semibold text-slate-500 truncate max-w-[160px]">{{ conf.organizer }}</span>
+                                </div>
+
+                                <h3 class="font-bold text-slate-800 text-xs sm:text-sm leading-snug hover:text-amber-700 transition">
+                                    {{ conf.title }}
+                                </h3>
+
+                                <div class="flex flex-wrap gap-1.5 mt-2.5">
+                                    <span v-for="fmt in conf.formats" :key="fmt" class="bg-sky-50 text-sky-800 border border-sky-200 text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                                        <i class="fa-solid fa-microphone text-[9px]" v-if="fmt.includes('口頭')"></i>
+                                        <i class="fa-solid fa-file-image text-[9px]" v-else-if="fmt.includes('海報')"></i>
+                                        <i class="fa-solid fa-certificate text-[9px]" v-else></i>
+                                        {{ fmt }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="pt-3 border-t border-slate-200/80 space-y-2 text-xs">
+                                <div class="flex items-center justify-between text-slate-600">
+                                    <span class="text-slate-500"><i class="fa-regular fa-calendar-days text-teal-600 mr-1"></i>活動日期：</span>
+                                    <span class="font-bold text-slate-700">{{ conf.eventDate }}</span>
+                                </div>
+                                <div class="flex items-center justify-between text-slate-600">
+                                    <span class="text-slate-500"><i class="fa-solid fa-hourglass-half text-rose-500 mr-1"></i>徵稿截止：</span>
+                                    <span class="font-extrabold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200/70">{{ conf.deadline }}</span>
+                                </div>
+                                <div class="flex items-center justify-between text-slate-600">
+                                    <span class="text-slate-500"><i class="fa-solid fa-arrow-pointer text-amber-500 mr-1"></i>點擊人次：</span>
+                                    <span class="font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60">{{ conferenceClicks[conf.id] || 0 }} 次</span>
+                                </div>
+
+                                <a :href="conf.website" target="_blank" @click="trackConferenceClick(conf.id)" class="w-full mt-2 bg-slate-800 hover:bg-teal-700 text-white py-2 px-3 rounded-lg text-center text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-xs">
+                                    <span>前往研討會投稿系統</span>
+                                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-else class="text-center py-8 text-slate-400 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                        目前尚無學術研討會徵稿資訊，請點擊右上角齒輪圖示進入「網頁內容維護」新增。
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Journal Cards Grid -->
+                    <div class="lg:col-span-2 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                                期刊清單
+                                <span class="bg-teal-100 text-teal-800 text-xs px-2.5 py-0.5 rounded-full font-bold">{{ filteredJournals.length }} 本期刊</span>
+                            </h2>
+                            <span class="text-xs text-slate-500">點擊卡片可開啟該期刊之詳細投稿規範與檢核表</span>
+                        </div>
+
+                        <!-- Grid -->
+                        <div v-if="filteredJournals.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div 
+                                v-for="journal in filteredJournals" 
+                                :key="journal.id"
+                                class="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md hover:border-teal-400 transition duration-200 flex flex-col justify-between relative group"
+                            >
+                                <div>
+                                    <!-- Header Badges -->
+                                    <div class="flex items-start justify-end gap-2 mb-2">
+                                        <!-- Compare Checkbox -->
+                                        <label class="flex items-center gap-1 text-[11px] text-slate-500 hover:text-teal-700 cursor-pointer select-none bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                                            <input 
+                                                type="checkbox" 
+                                                :value="journal.id" 
+                                                v-model="compareList"
+                                                :disabled="compareList.length >= 3 && !compareList.includes(journal.id)"
+                                                class="rounded text-teal-600 focus:ring-teal-500 h-3.5 w-3.5 cursor-pointer"
+                                            >
+                                            對比
+                                        </label>
+                                    </div>
+
+                                    <!-- Title -->
+                                    <h3 @click="selectJournal(journal)" class="text-base font-bold text-slate-800 group-hover:text-teal-600 cursor-pointer transition line-clamp-1">
+                                        {{ journal.name }}
+                                    </h3>
+                                    <p class="text-xs text-slate-400 mb-3">{{ journal.enName }} (ISSN: {{ journal.issn }})</p>
+
+                                    <!-- Frequency & Fast Info -->
+                                    <div class="space-y-1.5 text-xs text-slate-600 mb-4 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                        <div class="flex justify-between">
+                                            <span class="text-slate-400">發行頻率:</span>
+                                            <span class="font-medium text-slate-700">{{ journal.frequency }}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-slate-400">主要接受:</span>
+                                            <span class="font-medium text-slate-700 truncate max-w-[140px]">{{ journal.acceptedTypes.slice(0, 3).join(', ') }}等</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-slate-400">審查週期:</span>
+                                            <span class="font-medium text-teal-700 font-semibold">{{ journal.reviewPeriod }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="pt-2 flex gap-2">
+                                    <button 
+                                        @click="selectJournal(journal)" 
+                                        class="flex-grow bg-slate-100 hover:bg-teal-600 hover:text-white text-slate-700 text-xs font-semibold py-2 px-3 rounded-lg transition duration-150 flex items-center justify-center gap-1.5 cursor-pointer"
+                                    >
+                                        <span>查看完整規範</span>
+                                        <i class="fa-solid fa-angle-right text-[10px]"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div v-else class="bg-white rounded-xl border border-slate-200 p-8 text-center space-y-3">
+                            <i class="fa-solid fa-folder-open text-3xl text-slate-300"></i>
+                            <p class="text-slate-500 font-medium text-sm">找不到符合條件的護理期刊，請嘗試調整搜尋條件。</p>
+                            <button @click="resetFilters" class="text-xs text-teal-600 font-bold hover:underline cursor-pointer">清除搜尋關鍵字</button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        
+                        <!-- Compare Panel Box -->
+                        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                    <i class="fa-solid fa-scale-balanced text-teal-600"></i> 期刊規範比較
+                                </h3>
+                                <span class="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">
+                                    {{ compareList.length }} / 3
+                                </span>
+                            </div>
+
+                            <p class="text-xs text-slate-500">在期刊卡片右上角勾選「對比」（最多選擇3本），進行橫向對比分析。</p>
+
+                            <!-- Selected List -->
+                            <div v-if="compareList.length > 0" class="space-y-2">
+                                <div v-for="id in compareList" :key="id" class="flex items-center justify-between bg-teal-50/60 border border-teal-200 text-teal-900 px-3 py-2 rounded-lg text-xs">
+                                    <span class="font-bold truncate max-w-[170px]">{{ getJournalName(id) }}</span>
+                                    <button @click="removeCompare(id)" class="text-teal-500 hover:text-rose-600 cursor-pointer">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+
+                                <button 
+                                    @click="showCompareModal = true" 
+                                    class="w-full mt-2 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition duration-150 flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                                >
+                                    <i class="fa-solid fa-table-columns"></i> 啟動對比分析
+                                </button>
+                            </div>
+
+                            <div v-else class="text-center py-6 text-slate-400 text-xs bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                                尚未選擇比較期刊
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="mt-10 bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-4 border-b border-slate-100 gap-2">
+                        <div class="flex items-center gap-2">
+                            <div class="p-2 bg-teal-50 text-teal-700 rounded-lg">
+                                <i class="fa-solid fa-chart-simple text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm">點擊率排行</h3>
+                                <p class="text-xs text-slate-400">統計院內同仁對於各大護理期刊與學術研討會之點擊查詢與連結點閱次數</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 self-end sm:self-auto">
+                            <!-- Statistics Category Tabs -->
+                            <div class="bg-slate-100 p-1 rounded-lg flex text-xs font-bold">
+                                <button 
+                                    @click="statTab = 'journals'" 
+                                    :class="statTab === 'journals' ? 'bg-white text-teal-700 shadow-2xs' : 'text-slate-500 hover:text-slate-700'"
+                                    class="px-3 py-1 rounded-md transition cursor-pointer"
+                                >
+                                    期刊點擊率
+                                </button>
+                                <button 
+                                    @click="statTab = 'conferences'" 
+                                    :class="statTab === 'conferences' ? 'bg-white text-amber-700 shadow-2xs' : 'text-slate-500 hover:text-slate-700'"
+                                    class="px-3 py-1 rounded-md transition cursor-pointer flex items-center gap-1"
+                                >
+                                    <i class="fa-solid fa-calendar-check text-[10px]"></i> 學術研討會點擊率
+                                </button>
+                            </div>
+
+                            <button @click="resetStats" class="text-xs text-slate-400 hover:text-rose-600 transition flex items-center gap-1 cursor-pointer" title="重置數據">
+                                <i class="fa-solid fa-rotate-left"></i> 重置數據
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Journal Statistics Table -->
+                    <div v-if="statTab === 'journals'" class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-xs text-left text-slate-600">
+                            <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                                <tr>
+                                    <th class="py-2.5 px-3">期刊名稱</th>
+                                    <th class="py-2.5 px-3 text-center">規範點閱次數</th>
+                                    <th class="py-2.5 px-3 text-center">前往投審稿次數</th>
+                                    <th class="py-2.5 px-3 w-1/3">點擊率排名(n%)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr v-for="j in journals" :key="'stat-'+j.id" class="hover:bg-slate-50/80 transition">
+                                    <td class="py-2.5 px-3 font-bold text-slate-800">{{ j.name }}</td>
+                                    <td class="py-2.5 px-3 text-center font-bold text-teal-700">{{ journalViews[j.id] || 0 }}</td>
+                                    <td class="py-2.5 px-3 text-center font-bold text-amber-700">{{ journalPortalClicks[j.id] || 0 }}</td>
+                                    <td class="py-2.5 px-3">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                                <div 
+                                                    class="bg-teal-500 h-2 rounded-full transition-all duration-300"
+                                                    :style="{ width: getStatBarWidth(j.id) + '%' }"
+                                                ></div>
+                                            </div>
+                                            <span class="text-[10px] text-slate-400 w-8 text-right font-mono">{{ getStatBarWidth(j.id) }}%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Conference Statistics Table -->
+                    <div v-if="statTab === 'conferences'" class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-xs text-left text-slate-600">
+                            <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                                <tr>
+                                    <th class="py-2.5 px-3">研討會名稱</th>
+                                    <th class="py-2.5 px-3">主辦單位</th>
+                                    <th class="py-2.5 px-3 text-center">徵稿截止日</th>
+                                    <th class="py-2.5 px-3 text-center">投稿系統點擊次數</th>
+                                    <th class="py-2.5 px-3 w-1/3">點擊率排名(n%)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr v-for="conf in conferences" :key="'conf-stat-'+conf.id" class="hover:bg-slate-50/80 transition">
+                                    <td class="py-2.5 px-3 font-bold text-slate-800">{{ conf.title }}</td>
+                                    <td class="py-2.5 px-3 text-slate-600">{{ conf.organizer }}</td>
+                                    <td class="py-2.5 px-3 text-center font-semibold text-rose-600">{{ conf.deadline }}</td>
+                                    <td class="py-2.5 px-3 text-center font-bold text-amber-700">{{ conferenceClicks[conf.id] || 0 }}次</td>
+                                    <td class="py-2.5 px-3">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                                <div 
+                                                    class="bg-amber-500 h-2 rounded-full transition-all duration-300"
+                                                    :style="{ width: getConfStatBarWidth(conf.id) + '%' }"
+                                                ></div>
+                                            </div>
+                                            <span class="text-[10px] text-slate-400 w-8 text-right font-mono">{{ getConfStatBarWidth(conf.id) }}%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+        <transition name="slide-over">
+            <div v-if="selectedJournal" class="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-xs flex justify-end">
+                <div class="bg-white w-full max-w-3xl h-full shadow-2xl flex flex-col justify-between overflow-hidden">
+                    
+                    <!-- Subpage Header -->
+                    <div class="bg-teal-900 text-white p-5 sm:p-6 shrink-0 relative">
+                        <button @click="closeSubpage" class="absolute top-5 right-5 text-teal-300 hover:text-white text-xl p-1 transition cursor-pointer">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                        <div class="flex items-center gap-2 text-teal-300 text-xs font-semibold mb-1">
+                            <span>ISSN: {{ selectedJournal.issn }}</span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-bold pr-8">{{ selectedJournal.name }}</h2>
+                        <p class="text-teal-200 text-xs mt-0.5">{{ selectedJournal.enName }}</p>
+                    </div>
+
+                    <!-- Subpage Tab Switcher -->
+                    <div class="flex border-b border-slate-200 bg-slate-50 px-6 shrink-0 text-xs font-bold text-slate-600">
+                        <button 
+                            v-for="tab in subpageTabs" 
+                            :key="tab.id"
+                            @click="activeTab = tab.id"
+                            :class="activeTab === tab.id ? 'border-b-2 border-teal-600 text-teal-700 bg-white' : 'hover:text-slate-800'"
+                            class="py-3 px-4 transition flex items-center gap-1.5 cursor-pointer"
+                        >
+                            <i :class="tab.icon"></i> {{ tab.name }}
+                        </button>
+                    </div>
+
+                    <!-- Subpage Tab Content Body -->
+                    <div class="p-6 overflow-y-auto custom-scrollbar flex-grow space-y-6 text-xs sm:text-sm text-slate-700">
+                        
+                        <!-- TAB 1: Basic Info & Scope -->
+                        <div v-if="activeTab === 'info'" class="space-y-4">
+                            <div class="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                <div>
+                                    <span class="text-slate-400 block text-[11px]">主辦單位 / 出版單位</span>
+                                    <span class="font-bold text-slate-800">{{ selectedJournal.publisher }}</span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[11px]">發行頻率</span>
+                                    <span class="font-bold text-slate-800">{{ selectedJournal.frequency }}</span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[11px]">審查週期</span>
+                                    <span class="font-bold text-teal-700">{{ selectedJournal.reviewPeriod }}</span>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 block text-[11px]">審查費用 / 刊登費</span>
+                                    <span class="font-bold text-slate-800">{{ selectedJournal.feeStructure }}</span>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                                    <i class="fa-solid fa-bullseye text-teal-600"></i> 期刊旨趣與收錄範疇
+                                </h4>
+                                <p class="bg-white p-3.5 rounded-lg border border-slate-200 text-slate-600 leading-relaxed">
+                                    {{ selectedJournal.scope }}
+                                </p>
+                            </div>
+
+                            <div class="space-y-2">
+                                <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                                    <i class="fa-solid fa-file-signature text-teal-600"></i> 接受投稿文體類別
+                                </h4>
+                                <div class="flex flex-wrap gap-2">
+                                    <span v-for="t in selectedJournal.acceptedTypes" :key="t" class="bg-teal-50 text-teal-800 border border-teal-200 font-bold px-2.5 py-1 rounded-md text-xs">
+                                        {{ t }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: Word Limits & Rules -->
+                        <div v-if="activeTab === 'limits'" class="space-y-4">
+                            <div class="space-y-2">
+                                <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                                    <i class="fa-solid fa-file-lines text-teal-600"></i> 各文體字數與頁數嚴格限制
+                                </h4>
+                                <div class="border border-slate-200 rounded-xl overflow-hidden">
+                                    <table class="w-full text-xs text-left text-slate-600">
+                                        <thead class="bg-slate-100 text-slate-700 font-bold">
+                                            <tr>
+                                                <th class="py-2.5 px-3">文體類別</th>
+                                                <th class="py-2.5 px-3">字數限制 (含摘要/參考文獻)</th>
+                                                <th class="py-2.5 px-3">摘要字數上限</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-200">
+                                            <tr v-for="(rules, typeName) in selectedJournal.typeLimits" :key="typeName" class="hover:bg-slate-50">
+                                                <td class="py-2.5 px-3 font-bold text-slate-800">{{ typeName }}</td>
+                                                <td class="py-2.5 px-3 text-teal-700 font-semibold">{{ rules.maxWords }}</td>
+                                                <td class="py-2.5 px-3">{{ rules.abstractWords }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5 space-y-1.5 text-amber-900">
+                                <div class="font-bold text-xs flex items-center gap-1">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> 注意事項
+                                </div>
+                                <p class="text-[11px] leading-relaxed">
+                                    期刊退稿最常見原因為字數或頁數超出標準。字數統計通常包含中英文摘要、內文、參考文獻及圖表說明，請嚴格遵守。
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- TAB 3: Formatting & Layout Rules -->
+                        <div v-if="activeTab === 'formatting'" class="space-y-4">
+                            <div class="space-y-3">
+                                <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                                    <i class="fa-solid fa-pen-ruler text-teal-600"></i> 排版與格式規範
+                                </h4>
+
+                                <div class="space-y-2" v-if="selectedJournal.formatting">
+                                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between">
+                                        <span class="text-slate-500 font-bold">字體與行距:</span>
+                                        <span class="font-semibold text-slate-800">{{ selectedJournal.formatting.fontAndSpacing }}</span>
+                                    </div>
+                                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between">
+                                        <span class="text-slate-500 font-bold">邊界與頁碼:</span>
+                                        <span class="font-semibold text-slate-800">{{ selectedJournal.formatting.margins }}</span>
+                                    </div>
+                                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between">
+                                        <span class="text-slate-500 font-bold">參考文獻格式:</span>
+                                        <span class="font-semibold text-teal-700">{{ selectedJournal.formatting.referenceStyle }}</span>
+                                    </div>
+                                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between">
+                                        <span class="text-slate-500 font-bold">圖表數量上限:</span>
+                                        <span class="font-semibold text-slate-800">{{ selectedJournal.formatting.figureLimits }}</span>
+                                    </div>
+                                    <div v-if="selectedJournal.formatting.otherRules" class="bg-teal-50/80 p-3.5 rounded-lg border border-teal-200 text-teal-950 mt-3 space-y-1">
+                                        <span class="font-bold text-teal-800 flex items-center gap-1.5 text-xs">
+                                            <i class="fa-solid fa-circle-info text-teal-600"></i> 其他規範說明
+                                        </span>
+                                        <p class="text-xs leading-relaxed text-slate-700 font-medium whitespace-pre-line">{{ selectedJournal.formatting.otherRules }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Subpage Footer with Direct Link -->
+                    <div class="p-4 bg-slate-100 border-t border-slate-200 shrink-0 flex items-center justify-between gap-3">
+                        <a 
+                            :href="selectedJournal.submissionUrl" 
+                            target="_blank" 
+                            @click="trackPortalClick(selectedJournal.id)"
+                            class="flex-grow bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs text-center transition flex items-center justify-center gap-2 shadow-xs"
+                        >
+                            <span>前往官方投審稿入口 ({{ selectedJournal.shortName }})</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                        </a>
+                        <button @click="closeSubpage" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer">
+                            關閉
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </transition>
+
+        <transition name="fade">
+            <div v-if="showCompareModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex justify-center items-center p-4">
+                <div class="bg-white w-full max-w-5xl rounded-2xl shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]">
+                    <!-- Compare Modal Header -->
+                    <div class="bg-slate-800 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between shrink-0">
+                        <h3 class="font-bold text-base flex items-center gap-2">
+                            <i class="fa-solid fa-scale-balanced text-teal-400"></i> 多期刊橫向比較矩陣
+                        </h3>
+                        <button @click="showCompareModal = false" class="text-slate-400 hover:text-white transition cursor-pointer">
+                            <i class="fa-solid fa-xmark text-xl"></i>
+                        </button>
+                    </div>
+
+                    <!-- Compare Table Body -->
+                    <div class="p-6 overflow-y-auto custom-scrollbar flex-grow">
+                        <table class="w-full text-xs text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-200">
+                                    <th class="p-3 bg-slate-50 w-32 font-bold text-slate-600">比較項目</th>
+                                    <th v-for="id in compareList" :key="id" class="p-3 font-bold text-slate-800 text-sm border-l border-slate-200">
+                                        {{ getJournal(id).name }}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200 text-slate-700">
+                                <tr>
+                                    <td class="p-3 font-bold bg-slate-50 text-slate-600">發行頻率</td>
+                                    <td v-for="id in compareList" :key="id" class="p-3 border-l border-slate-200">
+                                        {{ getJournal(id).frequency }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-bold bg-slate-50 text-slate-600">審查週期</td>
+                                    <td v-for="id in compareList" :key="id" class="p-3 border-l border-slate-200 font-bold text-teal-700">
+                                        {{ getJournal(id).reviewPeriod }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-bold bg-slate-50 text-slate-600">個案報告字數上限</td>
+                                    <td v-for="id in compareList" :key="id" class="p-3 border-l border-slate-200">
+                                        {{ getJournal(id).typeLimits && getJournal(id).typeLimits['個案報告'] ? getJournal(id).typeLimits['個案報告'].maxWords : '不接受或未規定' }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-bold bg-slate-50 text-slate-600">參考文獻格式</td>
+                                    <td v-for="id in compareList" :key="id" class="p-3 border-l border-slate-200">
+                                        {{ getJournal(id).formatting ? getJournal(id).formatting.referenceStyle : 'APA 第七版' }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-bold bg-slate-50 text-slate-600">官方投審稿連結</td>
+                                    <td v-for="id in compareList" :key="id" class="p-3 border-l border-slate-200">
+                                        <a 
+                                            :href="getJournal(id).submissionUrl" 
+                                            target="_blank" 
+                                            @click="trackPortalClick(id)"
+                                            class="text-teal-600 font-bold hover:underline inline-flex items-center gap-1"
+                                        >
+                                            前往官網 <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end shrink-0">
+                        <button @click="showCompareModal = false" class="bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold transition hover:bg-slate-700 cursor-pointer">
+                            關閉對比
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <transition name="fade">
+            <div v-if="showAdminModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex justify-center items-center p-4">
+                
+                <!-- Admin Login Verification Form -->
+                <div v-if="!isAdminLoggedIn" class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-100 flex flex-col overflow-hidden">
+                    <div class="bg-slate-800 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <div class="p-1.5 bg-amber-500/20 text-amber-400 rounded-lg">
+                                <i class="fa-solid fa-lock text-base"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-base">管理員登入驗證</h3>
+                                <p class="text-xs text-slate-400">請輸入管理員權限帳號與密碼</p>
+                            </div>
+                        </div>
+                        <button @click="showAdminModal = false" class="text-slate-400 hover:text-white transition cursor-pointer">
+                            <i class="fa-solid fa-xmark text-xl"></i>
+                        </button>
+                    </div>
+
+                    <form @submit.prevent="handleLogin" class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">管理員帳號 (Account)</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                <input 
+                                    v-model="loginUsername" 
+                                    type="text" 
+                                    placeholder="請輸入帳號" 
+                                    class="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none"
+                                >
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">管理員密碼 (Password)</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-key absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                <input 
+                                    v-model="loginPassword" 
+                                    type="password" 
+                                    placeholder="請輸入密碼" 
+                                    class="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none"
+                                >
+                            </div>
+                        </div>
+
+                        <div v-if="loginError" class="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-600 text-xs font-bold flex items-center gap-2">
+                            <i class="fa-solid fa-circle-exclamation text-rose-500"></i> {{ loginError }}
+                        </div>
+
+                        <div class="pt-2 flex gap-2">
+                            <button type="submit" class="flex-grow bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid fa-right-to-bracket"></i> 驗證登入
+                            </button>
+                            <button type="button" @click="showAdminModal = false" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer">
+                                取消
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Admin Management Panel (If Authenticated) -->
+                <div v-else class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]">
+                    <!-- Admin Header -->
+                    <div class="bg-slate-800 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between shrink-0">
+                        <div class="flex items-center gap-2.5">
+                            <div class="p-1.5 bg-amber-500/20 text-amber-400 rounded-lg">
+                                <i class="fa-solid fa-sliders text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-base">網頁內容維護</h3>
+                                <p class="text-xs text-slate-400">高雄醫學大學附設中和紀念醫院 護理部 學術資訊網</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button @click="handleLogout" title="登出後台" class="bg-rose-600/80 hover:bg-rose-600 text-white px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-2xs cursor-pointer">
+                                <i class="fa-solid fa-right-from-bracket"></i> 登出
+                            </button>
+                            <button @click="showAdminModal = false" class="text-slate-400 hover:text-white transition cursor-pointer">
+                                <i class="fa-solid fa-xmark text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Admin Header Tab Switcher -->
+                    <div class="flex border-b border-slate-200 bg-slate-100 px-6 pt-2 shrink-0 overflow-x-auto custom-scrollbar">
+                        <button 
+                            @click="adminTab = 'marquee'"
+                            :class="adminTab === 'marquee' ? 'border-teal-600 text-teal-700 font-bold bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'"
+                            class="border-b-2 py-2.5 px-4 text-xs transition flex items-center gap-2 rounded-t-lg shrink-0 cursor-pointer"
+                        >
+                            <i class="fa-solid fa-bullhorn text-amber-500"></i> 跑馬燈公告管理
+                        </button>
+                        <button 
+                            @click="adminTab = 'honor'"
+                            :class="adminTab === 'honor' ? 'border-teal-600 text-teal-700 font-bold bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'"
+                            class="border-b-2 py-2.5 px-4 text-xs transition flex items-center gap-2 rounded-t-lg shrink-0 cursor-pointer"
+                        >
+                            <i class="fa-solid fa-trophy text-amber-500"></i> 榮譽榜管理 ({{ honorRollList.length }})
+                        </button>
+                        <button 
+                            @click="adminTab = 'conferences'"
+                            :class="adminTab === 'conferences' ? 'border-teal-600 text-teal-700 font-bold bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'"
+                            class="border-b-2 py-2.5 px-4 text-xs transition flex items-center gap-2 rounded-t-lg shrink-0 cursor-pointer"
+                        >
+                            <i class="fa-solid fa-calendar-check text-teal-600"></i> 學術研討會徵稿管理 ({{ conferences.length }})
+                        </button>
+                        <button 
+                            @click="adminTab = 'journals'"
+                            :class="adminTab === 'journals' ? 'border-teal-600 text-teal-700 font-bold bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'"
+                            class="border-b-2 py-2.5 px-4 text-xs transition flex items-center gap-2 rounded-t-lg shrink-0 cursor-pointer"
+                        >
+                            <i class="fa-solid fa-book-bookmark text-sky-600"></i> 期刊清單管理 ({{ journals.length }})
+                        </button>
+                        <button 
+                            @click="adminTab = 'admins'"
+                            :class="adminTab === 'admins' ? 'border-teal-600 text-teal-700 font-bold bg-white' : 'border-transparent text-slate-500 hover:text-slate-700'"
+                            class="border-b-2 py-2.5 px-4 text-xs transition flex items-center gap-2 rounded-t-lg shrink-0 cursor-pointer"
+                        >
+                            <i class="fa-solid fa-user-shield text-purple-600"></i> 管理員權限管理 ({{ adminUsers.length }})
+                        </button>
+                    </div>
+
+                    <!-- Admin Body -->
+                    <div class="p-6 overflow-y-auto custom-scrollbar flex-grow space-y-6 text-xs text-slate-700">
+                        
+                        <!-- TAB 1: MARQUEE MANAGEMENT -->
+                        <div v-if="adminTab === 'marquee'" class="space-y-6">
+                            <!-- Toggle & Speed Controls -->
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-slate-200">
+                                    <div>
+                                        <span class="font-bold text-slate-800 block">跑馬燈顯示狀態</span>
+                                        <span class="text-slate-400 text-[11px]">控制前台是否開啟滾動欄</span>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" v-model="marqueeSettings.enabled" class="sr-only peer" @change="saveMarqueeSettings">
+                                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                                    </label>
+                                </div>
+
+                                <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-slate-200">
+                                    <div>
+                                        <span class="font-bold text-slate-800 block">跑馬燈輪播速度</span>
+                                        <span class="text-slate-400 text-[11px]">調整文字滾動快慢速度</span>
+                                    </div>
+                                    <select v-model="marqueeSettings.speed" @change="saveMarqueeSettings" class="bg-slate-100 border border-slate-300 font-semibold text-slate-700 px-2.5 py-1.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-500">
+                                        <option value="slow">慢速 (Slow)</option>
+                                        <option value="normal">中速 (Normal)</option>
+                                        <option value="fast">快速 (Fast)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Add New Announcement Form -->
+                            <div class="space-y-2">
+                                <label class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                                    <i class="fa-solid fa-plus-circle text-teal-600"></i> 新增公告內容
+                                </label>
+                                <div class="flex gap-2">
+                                    <input 
+                                        v-model="newMarqueeText" 
+                                        @keyup.enter="addMarqueeItem"
+                                        type="text" 
+                                        placeholder="輸入如：恭喜護理師通過台灣護理學會個案報告審查..."
+                                        class="flex-grow px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500 text-xs shadow-inner"
+                                    >
+                                    <button 
+                                        @click="addMarqueeItem" 
+                                        class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-bold transition shrink-0 flex items-center gap-1 cursor-pointer"
+                                    >
+                                        <i class="fa-solid fa-plus"></i> 新增
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Current List of Marquee Messages -->
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-bold text-slate-800 text-sm">目前播放中公告 ({{ marqueeList.length }} 則)</span>
+                                    <button @click="resetMarqueeToDefault" class="text-rose-600 hover:underline text-[11px] font-semibold cursor-pointer">
+                                        重置為預設公告範本
+                                    </button>
+                                </div>
+
+                                <div v-if="marqueeList.length === 0" class="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-400">
+                                    目前暫無任何跑馬燈公告，請於上方輸入新增。
+                                </div>
+
+                                <div v-else class="space-y-2">
+                                    <div 
+                                        v-for="(item, index) in marqueeList" 
+                                        :key="index"
+                                        class="bg-white border border-slate-200 rounded-lg p-3 flex items-center justify-between gap-3 hover:border-teal-300 transition"
+                                    >
+                                        <div class="flex items-center gap-2.5 flex-grow min-w-0">
+                                            <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded shrink-0">
+                                                #{{ index + 1 }}
+                                            </span>
+                                            <span class="text-slate-800 truncate font-medium">{{ item }}</span>
+                                        </div>
+                                        <button 
+                                            @click="removeMarqueeItem(index)" 
+                                            class="text-slate-400 hover:text-rose-600 p-1 transition cursor-pointer"
+                                            title="刪除此則公告"
+                                        >
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: HONOR ROLL MANAGEMENT -->
+                        <div v-if="adminTab === 'honor'" class="space-y-6">
+                            <!-- Add/Edit Honor Form -->
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                                <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                                    <i class="fa-solid fa-award text-amber-500"></i> {{ editingHonorId ? '編輯榮譽榜事蹟' : '新增榮譽榜事蹟' }}
+                                </h4>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">同仁姓名 *</label>
+                                        <input v-model="newHonor.name" type="text" placeholder="例如：林雅婷" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">職稱</label>
+                                        <input v-model="newHonor.title" type="text" placeholder="例如：副護理長 / 護理師" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">所屬單位</label>
+                                        <input v-model="newHonor.unit" type="text" placeholder="例如：7W 加護病房" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">上傳照片</label>
+                                        <div class="flex items-center gap-2">
+                                            <input 
+                                                type="file" 
+                                                accept="image/*" 
+                                                @change="handlePhotoUpload" 
+                                                class="block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer border border-slate-300 rounded-lg p-1 bg-white"
+                                            >
+                                            <button 
+                                                v-if="newHonor.photo" 
+                                                type="button" 
+                                                @click="newHonor.photo = ''" 
+                                                class="text-xs text-rose-600 hover:underline shrink-0 font-bold px-1"
+                                            >
+                                                清除照片
+                                            </button>
+                                        </div>
+                                        <div v-if="newHonor.photo" class="mt-1.5 flex items-center gap-2 bg-slate-100/80 p-1.5 rounded-lg border border-slate-200">
+                                            <img :src="newHonor.photo" class="w-7 h-7 rounded-full object-cover border border-amber-300 shrink-0">
+                                            <span class="text-[10px] text-teal-700 font-bold">已選擇圖片檔</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">榮譽 / 獲獎事蹟說明 *</label>
+                                        <input v-model="newHonor.award" type="text" placeholder="例如：榮獲 114 年度台灣護理學會個案報告審查通過第一名" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+                                </div>
+
+                                <div class="flex gap-2">
+                                    <button @click="saveHonorForm" class="flex-grow bg-teal-600 hover:bg-teal-700 text-white py-2 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer">
+                                        <i class="fa-solid fa-floppy-disk"></i> {{ editingHonorId ? '更新榮譽榜事蹟' : '確認新增榮譽榜事蹟' }}
+                                    </button>
+                                    <button v-if="editingHonorId" @click="resetHonorForm" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold text-xs transition cursor-pointer">
+                                        取消編輯
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Current List of Honor Items -->
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-bold text-slate-800 text-sm">目前榮譽榜名單 ({{ honorRollList.length }} 筆)</span>
+                                    <button @click="resetHonorToDefault" class="text-rose-600 hover:underline text-[11px] font-semibold cursor-pointer">
+                                        重置為預設榮譽榜範本
+                                    </button>
+                                </div>
+
+                                <div v-if="honorRollList.length === 0" class="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-400">
+                                    目前無任何榮譽榜資料，請於上方輸入新增。
+                                </div>
+
+                                <div v-else class="space-y-2">
+                                    <div v-for="item in honorRollList" :key="item.id" class="bg-white border border-slate-200 rounded-lg p-3.5 flex items-center justify-between gap-3 hover:border-teal-300 transition">
+                                        <div class="flex items-center gap-3 min-w-0 flex-grow">
+                                            <img :src="item.photo" :alt="item.name" class="w-10 h-10 rounded-full object-cover border border-amber-300 shrink-0" @error="(e) => e.target.src='https://placehold.co/100x100/334155/ffffff?text=' + encodeURIComponent(item.name[0] || '護')">
+                                            <div class="min-w-0 flex-grow text-xs">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="font-bold text-slate-800">{{ item.name }}</span>
+                                                    <span class="text-[10px] bg-teal-100 text-teal-800 px-1.5 py-0.2 rounded font-semibold">{{ item.unit }}</span>
+                                                    <span v-if="item.title" class="text-[10px] text-slate-400">{{ item.title }}</span>
+                                                </div>
+                                                <p class="text-slate-600 text-[11px] truncate font-medium mt-0.5"><i class="fa-solid fa-award text-amber-500 mr-1"></i>{{ item.award }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-1.5 shrink-0">
+                                            <button @click="startEditHonor(item)" class="text-slate-500 hover:text-teal-600 p-1.5 transition cursor-pointer" title="編輯事蹟"><i class="fa-solid fa-pen-to-square"></i></button>
+                                            <button @click="removeHonorItem(item.id)" class="text-slate-400 hover:text-rose-600 p-1.5 transition cursor-pointer" title="刪除事蹟"><i class="fa-solid fa-trash-can"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 3: CONFERENCE MANAGEMENT -->
+                        <div v-if="adminTab === 'conferences'" class="space-y-6">
+                            <!-- Add New Conference Form -->
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                                <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                                    <i class="fa-solid fa-calendar-plus text-teal-600"></i> 發布 / 新增學術研討會徵稿資訊
+                                </h4>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">研討會全稱 *</label>
+                                        <input v-model="newConf.title" type="text" placeholder="例如：2026 高雄醫學大學國際護理學術研討會" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">主辦單位</label>
+                                        <input v-model="newConf.organizer" type="text" placeholder="例如：高雄醫學大學附設中和紀念醫院" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">徵稿型式 (以逗號隔開)</label>
+                                        <input v-model="newConf.formats" type="text" placeholder="口頭報告, 海報發表" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">活動舉辦日期</label>
+                                        <input v-model="newConf.eventDate" type="text" placeholder="例如：2026-11-20" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">徵稿截止日期 *</label>
+                                        <input v-model="newConf.deadline" type="text" placeholder="例如：2026-08-31" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">研討會投稿網址 / 官網連結</label>
+                                        <input v-model="newConf.website" type="text" placeholder="https://" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+                                </div>
+
+                                <button @click="addConference" class="w-full bg-teal-600 hover:bg-teal-700 text-white py-2 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer">
+                                    <i class="fa-solid fa-plus"></i> 確認新增研討會資訊
+                                </button>
+                            </div>
+
+                            <!-- Current List of Conferences -->
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-bold text-slate-800 text-sm">目前已發布研討會 ({{ conferences.length }} 則)</span>
+                                    <button @click="resetConferencesToDefault" class="text-rose-600 hover:underline text-[11px] font-semibold cursor-pointer">
+                                        重置為預設研討會範本
+                                    </button>
+                                </div>
+
+                                <div v-if="conferences.length === 0" class="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-400">
+                                    目前無任何研討會資訊，請於上方輸入新增。
+                                </div>
+
+                                <div v-else class="space-y-2">
+                                    <div v-for="conf in conferences" :key="conf.id" class="bg-white border border-slate-200 rounded-lg p-3.5 flex items-start justify-between gap-3 hover:border-teal-300 transition">
+                                        <div class="space-y-1 min-w-0 flex-grow">
+                                            <div class="flex items-center gap-2">
+                                                <span :class="getConferenceStatus(conf) === '徵稿截止' ? 'bg-slate-200 text-slate-600' : 'bg-amber-100 text-amber-800'" class="text-[10px] font-bold px-2 py-0.5 rounded">
+                                                    {{ conf.organizer }} ({{ getConferenceStatus(conf) }})
+                                                </span>
+                                                <span class="text-slate-400 text-[11px]">截止: {{ conf.deadline }}</span>
+                                            </div>
+                                            <h5 class="font-bold text-slate-800 text-xs truncate">{{ conf.title }}</h5>
+                                            <div class="flex flex-wrap gap-1 text-[10px] text-slate-500">
+                                                <span>型式: {{ Array.isArray(conf.formats) ? conf.formats.join(', ') : conf.formats }}</span>
+                                                <span>| 日期: {{ conf.eventDate }}</span>
+                                            </div>
+                                        </div>
+                                        <button @click="removeConference(conf.id)" class="text-slate-400 hover:text-rose-600 p-1 transition cursor-pointer" title="刪除研討會">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 4: JOURNAL LIST MANAGEMENT -->
+                        <div v-if="adminTab === 'journals'" class="space-y-6">
+                            <!-- Add/Edit Journal Form -->
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                                <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                                    <i class="fa-solid fa-book-medical text-teal-600"></i> {{ editingJournalId ? '編輯期刊規範資訊' : '發布 / 新增護理期刊資訊' }}
+                                </h4>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">期刊中文名稱 *</label>
+                                        <input v-model="newJournal.name" type="text" placeholder="例如：護理雜誌" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">期刊英文名稱</label>
+                                        <input v-model="newJournal.enName" type="text" placeholder="例如：The Journal of Nursing" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">ISSN 刊號 *</label>
+                                        <input v-model="newJournal.issn" type="text" placeholder="例如：0047-262X" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">主辦 / 出版單位</label>
+                                        <input v-model="newJournal.publisher" type="text" placeholder="例如：台灣護理學會" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">發行頻率</label>
+                                        <input v-model="newJournal.frequency" type="text" placeholder="例如：雙月刊 (Bi-monthly)" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">審查週期</label>
+                                        <input v-model="newJournal.reviewPeriod" type="text" placeholder="例如：約 2-3 個月" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">審查費 / 稿酬說明</label>
+                                        <input v-model="newJournal.feeStructure" type="text" placeholder="例如：免審查費" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">接受投稿文體 (以逗號隔開)</label>
+                                        <input v-model="newJournal.acceptedTypesStr" type="text" placeholder="研究論文, 個案報告, 行政專案, 綜理討論" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">官方投審稿入口網址</label>
+                                        <input v-model="newJournal.submissionUrl" type="text" placeholder="https://" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">期刊旨趣與範疇</label>
+                                        <textarea v-model="newJournal.scope" rows="2" placeholder="簡述期刊主要收錄領域與學術範疇..." class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none"></textarea>
+                                    </div>
+
+                                    <!-- Section: Word & Page Limits -->
+                                    <div class="sm:col-span-2 border-t border-slate-200 pt-3 mt-1">
+                                        <h5 class="font-bold text-slate-700 text-xs mb-2 flex items-center gap-1">
+                                            <i class="fa-solid fa-file-lines text-teal-600"></i> 字數與頁數限制設定
+                                        </h5>
+                                        <!-- Abstract Word Limit (First Row) -->
+                                        <div class="mb-3">
+                                            <label class="block text-[10px] font-bold text-slate-500 mb-1">摘要字數上限</label>
+                                            <input v-model="newJournal.abstractMaxWords" type="text" placeholder="例如：300-500 字內" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                        </div>
+
+                                        <!-- Pair 1: Category 1 & Word Limit 1 -->
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-500 mb-1">文體類別 (一)</label>
+                                                <input v-model="newJournal.type1Name" type="text" placeholder="例如：研究論文" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-500 mb-1">字數上限 (一)</label>
+                                                <input v-model="newJournal.type1Words" type="text" placeholder="例如：12,000 字" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                            </div>
+                                        </div>
+
+                                        <!-- Pair 2: Category 2 & Word Limit 2 -->
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-500 mb-1">文體類別 (二)</label>
+                                                <input v-model="newJournal.type2Name" type="text" placeholder="例如：個案報告" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-500 mb-1">字數上限 (二)</label>
+                                                <input v-model="newJournal.type2Words" type="text" placeholder="例如：8,000 字" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Section: Formatting & Layout Rules -->
+                                    <div class="sm:col-span-2 border-t border-slate-200 pt-3">
+                                        <h5 class="font-bold text-slate-700 text-xs mb-2 flex items-center gap-1">
+                                            <i class="fa-solid fa-pen-ruler text-teal-600"></i> 排版與格式規範設定
+                                        </h5>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-500 mb-1">字體與行距</label>
+                                                <input v-model="newJournal.fontAndSpacing" type="text" placeholder="例如：中文標楷體、英文 Times New Roman，雙倍行高" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-500 mb-1">邊界與頁碼</label>
+                                                <input v-model="newJournal.margins" type="text" placeholder="例如：上下左右各 2.5 cm，頁碼置於右下角" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-500 mb-1">參考文獻格式</label>
+                                                <input v-model="newJournal.referenceStyle" type="text" placeholder="例如：APA 第七版 (APA 7th)" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold text-slate-500 mb-1">圖表數量上限</label>
+                                                <input v-model="newJournal.figureLimits" type="text" placeholder="例如：圖表合計不超過 5 個" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                            </div>
+                                            <div class="sm:col-span-2">
+                                                <label class="block text-[10px] font-bold text-slate-500 mb-1">其他規範說明</label>
+                                                <textarea v-model="newJournal.otherRules" rows="2" placeholder="例如：需附 IRB 人體試驗委員會審查同意書、第一作者需具有會員資格、授權同意書填寫說明等..." class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex gap-2 pt-2">
+                                    <button @click="saveJournalForm" class="flex-grow bg-teal-600 hover:bg-teal-700 text-white py-2 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer">
+                                        <i class="fa-solid fa-floppy-disk"></i> {{ editingJournalId ? '更新期刊資訊' : '確認新增期刊' }}
+                                    </button>
+                                    <button v-if="editingJournalId" @click="resetJournalForm" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold text-xs transition cursor-pointer">
+                                        取消編輯
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- List of Journals in Admin -->
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-bold text-slate-800 text-sm">目前收錄期刊 ({{ journals.length }} 本)</span>
+                                    <button @click="resetJournalsToDefault" class="text-rose-600 hover:underline text-[11px] font-semibold cursor-pointer">
+                                        重置為預設期刊範本
+                                    </button>
+                                </div>
+
+                                <div v-if="journals.length === 0" class="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-400">
+                                    目前無任何期刊資訊，請於上方輸入新增。
+                                </div>
+
+                                <div v-else class="space-y-2">
+                                    <div v-for="j in journals" :key="j.id" class="bg-white border border-slate-200 rounded-lg p-3.5 flex items-start justify-between gap-3 hover:border-teal-300 transition">
+                                        <div class="space-y-1 min-w-0 flex-grow">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-slate-400 text-[11px]">ISSN: {{ j.issn }}</span>
+                                            </div>
+                                            <h5 class="font-bold text-slate-800 text-xs truncate">{{ j.name }} ({{ j.enName }})</h5>
+                                            <p class="text-[11px] text-slate-500">主辦: {{ j.publisher }} | 頻率: {{ j.frequency }}</p>
+                                        </div>
+                                        <div class="flex items-center gap-1.5 shrink-0">
+                                            <button @click="startEditJournal(j)" class="text-slate-500 hover:text-teal-600 p-1.5 transition cursor-pointer" title="編輯期刊">
+                                                <i class="fa-solid fa-pen-to-square"></i>
+                                            </button>
+                                            <button @click="removeJournal(j.id)" class="text-slate-400 hover:text-rose-600 p-1.5 transition cursor-pointer" title="刪除期刊">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 5: ADMIN PRIVILEGE MANAGEMENT -->
+                        <div v-if="adminTab === 'admins'" class="space-y-6">
+                            <!-- Add/Edit Admin Form -->
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                                <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                                    <i class="fa-solid fa-user-plus text-purple-600"></i> {{ editingAdminId ? '編輯管理員帳號' : '新增管理員帳號' }}
+                                </h4>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">管理員帳號 *</label>
+                                        <input v-model="newAdmin.username" type="text" placeholder="請設定登入帳號" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">管理員密碼 *</label>
+                                        <input v-model="newAdmin.password" type="text" placeholder="請設定登入密碼" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">職編</label>
+                                        <input v-model="newAdmin.empId" type="text" placeholder="例如：N12345" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">姓名</label>
+                                        <input v-model="newAdmin.empName" type="text" placeholder="例如：林雅婷" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                    </div>
+                                </div>
+
+                                <div v-if="adminFormError" class="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-600 text-xs font-bold flex items-center gap-2">
+                                    <i class="fa-solid fa-circle-exclamation text-rose-500"></i> {{ adminFormError }}
+                                </div>
+
+                                <div class="flex gap-2">
+                                    <button @click="saveAdminForm" class="flex-grow bg-purple-700 hover:bg-purple-800 text-white py-2 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer">
+                                        <i class="fa-solid fa-floppy-disk"></i> {{ editingAdminId ? '更新管理員資料' : '確認新增管理員' }}
+                                    </button>
+                                    <button v-if="editingAdminId" @click="resetAdminForm" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold text-xs transition cursor-pointer">
+                                        取消編輯
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Current List of Admin Users -->
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-bold text-slate-800 text-sm">系統管理員清單 ({{ adminUsers.length }} 位)</span>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <div v-for="user in adminUsers" :key="user.id" class="bg-white border rounded-lg p-3.5 flex items-center justify-between gap-3 transition" :class="user.isOriginal ? 'border-amber-300 bg-amber-50/20' : 'border-slate-200 hover:border-purple-300'">
+                                        <div class="space-y-1 min-w-0 flex-grow">
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-bold text-slate-800 text-xs">{{ user.username }}</span>
+                                                <span v-if="user.empName" class="text-xs text-slate-700 font-bold">({{ user.empName }})</span>
+                                                <span v-if="user.isOriginal" class="bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                                                    <i class="fa-solid fa-shield-halved text-amber-600"></i> 原始管理員
+                                                </span>
+                                                <span v-else-if="user.empId" class="bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-bold px-2 py-0.5 rounded">
+                                                    職編: {{ user.empId }}
+                                                </span>
+                                            </div>
+                                            <p class="text-[11px] text-slate-500 font-medium">
+                                                <span class="text-slate-400">密碼：</span><span class="font-mono">{{ user.password }}</span>
+                                                <span v-if="user.empId" class="ml-3 text-slate-400">| 職編：{{ user.empId }}</span>
+                                            </p>
+                                        </div>
+
+                                        <!-- Actions -->
+                                        <div class="flex items-center gap-1.5 shrink-0">
+                                            <template v-if="user.isOriginal">
+                                                <span class="text-[11px] text-amber-700 bg-amber-100/80 px-2.5 py-1 rounded-md font-bold flex items-center gap-1 select-none">
+                                                    <i class="fa-solid fa-lock text-xs"></i> 系統鎖定 (不可修改/刪除)
+                                                </span>
+                                            </template>
+                                            <template v-else>
+                                                <button @click="startEditAdmin(user)" class="text-slate-500 hover:text-purple-700 p-1.5 transition cursor-pointer" title="編輯帳號">
+                                                    <i class="fa-solid fa-pen-to-square"></i>
+                                                </button>
+                                                <button @click="removeAdmin(user.id)" class="text-slate-400 hover:text-rose-600 p-1.5 transition cursor-pointer" title="刪除帳號">
+                                                    <i class="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Admin Footer -->
+                    <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end shrink-0">
+                        <button @click="showAdminModal = false" class="bg-teal-700 hover:bg-teal-800 text-white px-5 py-2 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer">
+                            關閉網頁維護
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+        <footer class="bg-slate-900 text-slate-400 text-xs py-8 border-t border-slate-800 mt-12">
+            <div class="max-w-7xl mx-auto px-4 text-center space-y-2">
+                <p class="text-slate-300 font-bold">高雄醫學大學附設中和紀念醫院 護理部 學術資訊網</p>
+                <p class="text-slate-500">KMUH Academic Information Network &copy; 2026. All rights reserved.</p>
+                <p class="text-[11px] text-slate-600">本系統規範彙整自各大護理學會與期刊官網最新投稿簡則，投稿前請仍以期刊官方最新公告為準。</p>
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+
+        createApp({
+            setup() {
+                const defaultMarqueeList = [
+                    "恭喜護理師通過台灣護理學會個案報告審查！",
+                    "恭喜同仁榮獲護理專案發表優等獎！",
+                    "115年度學術研討會投稿開跑，歡迎踴躍投稿！"
+                ];
+
+                const defaultHonorRollList = [
+                    {
+                        id: 1,
+                        name: "林雅婷",
+                        title: "副護理長",
+                        unit: "7W 加護病房",
+                        award: "榮獲 114 年度台灣護理學會個案報告審查通過第一名",
+                        photo: "https://images.unsplash.com/photo-1594824813566-88855ce7890b?w=150&auto=format&fit=crop&q=80"
+                    },
+                    {
+                        id: 2,
+                        name: "陳健銘",
+                        title: "護理師",
+                        unit: "急診醫學部",
+                        award: "學術論文成功發表刊登於《護理雜誌》第71卷第3期",
+                        photo: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=150&auto=format&fit=crop&q=80"
+                    },
+                    {
+                        id: 3,
+                        name: "張秀英",
+                        title: "督導長",
+                        unit: "護理部",
+                        award: "榮獲 114 年度全國護理行政專案競賽優等獎",
+                        photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80"
+                    }
+                ];
+
+                // Honor Roll State
+                const honorRollList = ref(JSON.parse(localStorage.getItem('kmuhHonorRollList')) || defaultHonorRollList);
+                const editingHonorId = ref(null);
+                const newHonor = ref({
+                    name: '',
+                    title: '',
+                    unit: '',
+                    award: '',
+                    photo: ''
+                });
+
+                const saveHonorInStorage = () => {
+                    localStorage.setItem('kmuhHonorRollList', JSON.stringify(honorRollList.value));
+                };
+
+                const handlePhotoUpload = (event) => {
+                    const file = event.target.files && event.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            newHonor.value.photo = e.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
+
+                const resetHonorForm = () => {
+                    editingHonorId.value = null;
+                    newHonor.value = {
+                        name: '',
+                        title: '',
+                        unit: '',
+                        award: '',
+                        photo: ''
+                    };
+                };
+
+                const startEditHonor = (item) => {
+                    editingHonorId.value = item.id;
+                    newHonor.value = {
+                        name: item.name,
+                        title: item.title || '',
+                        unit: item.unit || '',
+                        award: item.award || '',
+                        photo: item.photo || ''
+                    };
+                };
+
+                const saveHonorForm = () => {
+                    if (!newHonor.value.name.trim() || !newHonor.value.award.trim()) return;
+
+                    const photoUrl = newHonor.value.photo.trim() || 'https://placehold.co/100x100/334155/ffffff?text=' + encodeURIComponent(newHonor.value.name[0] || '護');
+
+                    if (editingHonorId.value) {
+                        const idx = honorRollList.value.findIndex(h => h.id === editingHonorId.value);
+                        if (idx !== -1) {
+                            honorRollList.value[idx] = {
+                                ...honorRollList.value[idx],
+                                name: newHonor.value.name.trim(),
+                                title: newHonor.value.title.trim(),
+                                unit: newHonor.value.unit.trim() || '護理部',
+                                award: newHonor.value.award.trim(),
+                                photo: photoUrl
+                            };
+                        }
+                    } else {
+                        honorRollList.value.unshift({
+                            id: Date.now(),
+                            name: newHonor.value.name.trim(),
+                            title: newHonor.value.title.trim(),
+                            unit: newHonor.value.unit.trim() || '護理部',
+                            award: newHonor.value.award.trim(),
+                            photo: photoUrl
+                        });
+                    }
+
+                    saveHonorInStorage();
+                    resetHonorForm();
+                };
+
+                const removeHonorItem = (id) => {
+                    honorRollList.value = honorRollList.value.filter(h => h.id !== id);
+                    saveHonorInStorage();
+                };
+
+                const resetHonorToDefault = () => {
+                    honorRollList.value = [...defaultHonorRollList];
+                    saveHonorInStorage();
+                };
+
+                const defaultConferences = [
+                    {
+                        id: 1,
+                        title: "2026 高雄醫學大學國際護理學術研討會",
+                        organizer: "高雄醫學大學附設中和紀念醫院",
+                        eventDate: "2026-11-20",
+                        deadline: "2026-08-31",
+                        formats: ["口頭報告", "海報發表"],
+                        website: "https://www.kmuh.org.tw",
+                        status: "徵稿中"
+                    },
+                    {
+                        id: 2,
+                        title: "台灣護理學會第42次護理學術研討會",
+                        organizer: "台灣護理學會",
+                        eventDate: "2026-10-15",
+                        deadline: "2026-07-15",
+                        formats: ["口頭發表", "海報展示"],
+                        website: "https://www.tna.org.tw",
+                        status: "徵稿中"
+                    }
+                ];
+
+                const defaultJournalsList = [
+                    {
+                        id: 'j1',
+                        name: '護理雜誌',
+                        shortName: '護理雜誌',
+                        enName: 'The Journal of Nursing',
+                        issn: '0047-262X',
+                        publisher: '台灣護理學會',
+                        frequency: '雙月刊 (Bi-monthly)',
+                        reviewPeriod: '約 2-3 個月',
+                        feeStructure: '免審查費 / 依規範發給稿酬',
+                        scope: '刊載護理學術論文、個案報告、護理專案、新知綜論及護理教育研究等，為台灣最具指標性之護理學術期刊。',
+                        acceptedTypes: ['研究論文', '個案報告', '行政專案', '綜理討論'],
+                        typeLimits: {
+                            '研究論文': { maxWords: '12,000 字', abstractWords: '500 字內' },
+                            '個案報告': { maxWords: '8,000 字', abstractWords: '300 字內' },
+                            '行政專案': { maxWords: '8,000 字', abstractWords: '300 字內' },
+                            '綜理討論': { maxWords: '10,000 字', abstractWords: '400 字內' }
+                        },
+                        formatting: {
+                            fontAndSpacing: '中文標楷體、英文Times New Roman，隔行(Double Line)打字',
+                            margins: '上下左右各 2.5 cm，頁碼置於右下角',
+                            referenceStyle: 'APA 第七版 (APA 7th Edition)',
+                            figureLimits: '圖表合計以不超過 5 個為原則'
+                        },
+                        submissionUrl: 'https://www.tna.org.tw'
+                    },
+                    {
+                        id: 'j2',
+                        name: '榮總護理',
+                        shortName: '榮總護理',
+                        enName: 'VGH Nursing',
+                        issn: '0257-5426',
+                        publisher: '臺北榮民總醫院護理部 / 榮總護理雜誌社',
+                        frequency: '季刊 (Quarterly)',
+                        reviewPeriod: '約 1.5 - 2 個月',
+                        feeStructure: '免投稿審查費',
+                        scope: '促進護理學術研究交流，提升臨床護理照護品質，涵蓋臨床照護、護理行政、護理教育與專案成果。',
+                        acceptedTypes: ['研究論文', '個案報告', '護理專案', '護理衛教'],
+                        typeLimits: {
+                            '研究論文': { maxWords: '10,000 字', abstractWords: '400 字內' },
+                            '個案報告': { maxWords: '7,000 字', abstractWords: '300 字內' },
+                            '護理專案': { maxWords: '7,000 字', abstractWords: '300 字內' }
+                        },
+                        formatting: {
+                            fontAndSpacing: '中文新細明體，12pt，雙倍行高',
+                            margins: '標準邊界 (2.54 cm)',
+                            referenceStyle: 'APA 第七版 (APA 7th)',
+                            figureLimits: '圖表總數限 4 個以內'
+                        },
+                        submissionUrl: 'https://www.vghtpe.gov.tw'
+                    },
+                    {
+                        id: 'j3',
+                        name: '長庚護理',
+                        shortName: '長庚護理',
+                        enName: 'Chang Gung Nursing',
+                        issn: '1018-8770',
+                        publisher: '長庚醫療財團法人長庚紀念醫院',
+                        frequency: '季刊 (Quarterly)',
+                        reviewPeriod: '約 2 個月',
+                        feeStructure: '免審查費',
+                        scope: '致力於刊登高質量臨床護理研究、個案分析及品質改善專案，提供實證護理實務參考。',
+                        acceptedTypes: ['研究論文', '個案報告', '行政專案', '品質改善'],
+                        typeLimits: {
+                            '研究論文': { maxWords: '10,000 字', abstractWords: '400 字內' },
+                            '個案報告': { maxWords: '6,500 字', abstractWords: '250 字內' },
+                            '行政專案': { maxWords: '7,000 字', abstractWords: '300 字內' }
+                        },
+                        formatting: {
+                            fontAndSpacing: '中文標楷體，英文 Times New Roman，12pt，雙倍行距',
+                            margins: '上下左右各 2.5 cm',
+                            referenceStyle: 'APA 第七版',
+                            figureLimits: '圖表合計最多 5 個'
+                        },
+                        submissionUrl: 'https://www.cgmh.org.tw'
+                    },
+                    {
+                        id: 'j4',
+                        name: '慈濟護理雜誌',
+                        shortName: '慈濟護理',
+                        enName: 'Tzu Chi Nursing Journal',
+                        issn: '1683-1624',
+                        publisher: '佛教慈濟醫療財團法人',
+                        frequency: '雙月刊 (Bi-monthly)',
+                        reviewPeriod: '約 1 - 2 個月',
+                        feeStructure: '免收審查費',
+                        scope: '展現人文關懷與實證護理，刊登涵蓋臨床護理、護理倫理、社區護理與護理教育之原著及個案。',
+                        acceptedTypes: ['研究論文', '個案報告', '護理專案', '綜理討論'],
+                        typeLimits: {
+                            '研究論文': { maxWords: '9,000 字', abstractWords: '350 字內' },
+                            '個案報告': { maxWords: '6,000 字', abstractWords: '250 字內' }
+                        },
+                        formatting: {
+                            fontAndSpacing: '中文標楷體，12pt，雙倍行高',
+                            margins: '邊界 2.5 cm',
+                            referenceStyle: 'APA 第七版',
+                            figureLimits: '圖表限 4 個'
+                        },
+                        submissionUrl: 'https://www.tzuchi.com.tw'
+                    },
+                    {
+                        id: 'j5',
+                        name: '源遠護理',
+                        shortName: '源遠護理',
+                        enName: 'Yuan-Yuan Nursing',
+                        issn: '1992-4112',
+                        publisher: '國防醫學院護理學系暨校友會',
+                        frequency: '半年刊 (Semi-annual)',
+                        reviewPeriod: '約 2 個月',
+                        feeStructure: '免審查費',
+                        scope: '促進國軍及各界護理學術交流，鼓勵發表照護新知、健康促進與臨床實務論文。',
+                        acceptedTypes: ['研究論文', '個案報告', '護理專案'],
+                        typeLimits: {
+                            '研究論文': { maxWords: '10,000 字', abstractWords: '400 字內' },
+                            '個案報告': { maxWords: '6,000 字', abstractWords: '250 字內' }
+                        },
+                        formatting: {
+                            fontAndSpacing: '中文標楷體，英文 Times New Roman',
+                            margins: '標準 2.54 cm',
+                            referenceStyle: 'APA 第七版',
+                            figureLimits: '圖表限 5 個'
+                        },
+                        submissionUrl: 'https://www.ndmctsgh.edu.tw'
+                    },
+                    {
+                        id: 'j6',
+                        name: '高雄護理雜誌',
+                        shortName: '高雄護理',
+                        enName: 'Kaohsiung Journal of Nursing',
+                        issn: '1026-4418',
+                        publisher: '高雄市護理師公會',
+                        frequency: '一年三期 (3 issues/year)',
+                        reviewPeriod: '約 1.5 個月',
+                        feeStructure: '免收審查費',
+                        scope: '提供南部護理人員發表管道，刊載臨床護理實務、專案改善與經驗分享。',
+                        acceptedTypes: ['個案報告', '護理專案', '研究論文', '品質改善'],
+                        typeLimits: {
+                            '個案報告': { maxWords: '7,000 字', abstractWords: '300 字內' },
+                            '護理專案': { maxWords: '7,000 字', abstractWords: '300 字內' },
+                            '研究論文': { maxWords: '10,000 字', abstractWords: '400 字內' }
+                        },
+                        formatting: {
+                            fontAndSpacing: '中文標楷體 12pt，雙倍行高',
+                            margins: '上下左右各 2.5 cm',
+                            referenceStyle: 'APA 第七版',
+                            figureLimits: '圖表合計不超過 4 個',
+                            otherRules: '優先刊登高雄市公會會員及南部醫療機構護理同仁著作。'
+                        },
+                        submissionUrl: 'https://www.kna.org.tw'
+                    },
+                    {
+                        id: 'j7',
+                        name: '新臺北護理期刊',
+                        shortName: '新臺北護理',
+                        enName: 'New Taipei Journal of Nursing',
+                        issn: '1680-3272',
+                        publisher: '新北市護理師公會',
+                        frequency: '半年刊 (Semi-annual)',
+                        reviewPeriod: '約 2 個月',
+                        feeStructure: '免收審查費',
+                        scope: '深耕基層與社區護理研究，促進各級醫療院所與長期照護體系之學術發表與實務發展。',
+                        acceptedTypes: ['研究論文', '個案報告', '專案改善', '綜理討論'],
+                        typeLimits: {
+                            '研究論文': { maxWords: '10,000 字', abstractWords: '400 字內' },
+                            '個案報告': { maxWords: '6,500 字', abstractWords: '300 字內' }
+                        },
+                        formatting: {
+                            fontAndSpacing: '中文標楷體 12pt，英文 Times New Roman，隔行打字',
+                            margins: '上下左右各 2.5 cm',
+                            referenceStyle: 'APA 第七版',
+                            figureLimits: '圖表合計以 4 個為限',
+                            otherRules: '文稿請附作者簡歷及連絡方式，投稿退稿皆以線上系統通知。'
+                        },
+                        submissionUrl: 'https://www.ntpna.org.tw'
+                    },
+                    {
+                        id: 'j8',
+                        name: '志為護理',
+                        shortName: '志為護理',
+                        enName: 'Tzu Chi Nursing Care',
+                        issn: '1683-1624',
+                        publisher: '佛教慈濟醫療財團法人 / 臺灣護理學會',
+                        frequency: '雙月刊 (Bi-monthly)',
+                        reviewPeriod: '約 1.5 - 2 個月',
+                        feeStructure: '免審查費',
+                        scope: '兼具學術性與實務性之護理刊物，刊載護理新知、臨床專題、護理行政及溫馨照護經驗。',
+                        acceptedTypes: ['護理專案', '個案報告', '專題討論', '護理經驗'],
+                        typeLimits: {
+                            '護理專案': { maxWords: '7,000 字', abstractWords: '300 字內' },
+                            '個案報告': { maxWords: '6,000 字', abstractWords: '250 字內' }
+                        },
+                        formatting: {
+                            fontAndSpacing: '中文新細明體或標楷體 12pt，雙倍行高',
+                            margins: '標準邊界 (2.54 cm)',
+                            referenceStyle: 'APA 第七版',
+                            figureLimits: '圖表限 5 個以內',
+                            otherRules: '內文照片需注意病患隱私權，眼睛部位應適用適當遮蔽處理。'
+                        },
+                        submissionUrl: 'https://www.tzuchi.com.tw'
+                    },
+                    {
+                        id: 'j9',
+                        name: '馬偕護理雜誌',
+                        shortName: '馬偕護理',
+                        enName: 'MacKay Nursing Journal',
+                        issn: '1994-3903',
+                        publisher: '馬偕紀念醫院護理部',
+                        frequency: '半年刊 (Semi-annual)',
+                        reviewPeriod: '約 2 個月',
+                        feeStructure: '免收審查費',
+                        scope: '提供護理人員發表臨床照護研究、品質改善專案及個案評攻之交流平台，致力提升照護品質。',
+                        acceptedTypes: ['研究論文', '個案報告', '護理專案', '品質改善'],
+                        typeLimits: {
+                            '研究論文': { maxWords: '9,500 字', abstractWords: '350 字內' },
+                            '個案報告': { maxWords: '6,000 字', abstractWords: '250 字內' }
+                        },
+                        formatting: {
+                            fontAndSpacing: '中文標楷體，12pt，雙倍行高',
+                            margins: '上下左右各 2.5 cm',
+                            referenceStyle: 'APA 第七版',
+                            figureLimits: '圖表總數限 4 個',
+                            otherRules: '文章請依據本刊最新格式寫作，文責由作者自負。'
+                        },
+                        submissionUrl: 'https://www.mmh.org.tw'
+                    },
+                    {
+                        id: 'j10',
+                        name: '奇美護理',
+                        shortName: '奇美護理',
+                        enName: 'Chimei Nursing',
+                        issn: '1819-3331',
+                        publisher: '奇美醫療財團法人奇美醫院',
+                        frequency: '半年刊 (Semi-annual)',
+                        reviewPeriod: '約 1.5 - 2 個月',
+                        feeStructure: '免審查費',
+                        scope: '分享奇美醫療體系及各界護理同仁實務護理經驗、臨床個案討論與照護品質專案成果。',
+                        acceptedTypes: ['個案報告', '護理專案', '研究論文'],
+                        typeLimits: {
+                            '個案報告': { maxWords: '6,500 字', abstractWords: '250 字內' },
+                            '護理專案': { maxWords: '7,000 字', abstractWords: '300 字內' },
+                            '研究論文': { maxWords: '9,000 字', abstractWords: '350 字內' }
+                        },
+                        formatting: {
+                            fontAndSpacing: '中文標楷體，12pt，雙倍行高',
+                            margins: '標準 2.5 cm',
+                            referenceStyle: 'APA 第七版',
+                            figureLimits: '圖表限 4 個',
+                            otherRules: '凡涉及人體試驗者，需附 IRB 許可證明文號。'
+                        },
+                        submissionUrl: 'http://www.chimei.org.tw'
+                    },
+                    {
+                        id: 'j11',
+                        name: '急重症護理雜誌',
+                        shortName: '急重症護理',
+                        enName: 'Journal of Critical Care Nursing',
+                        issn: '1813-2618',
+                        publisher: '臺灣急重症護理學會',
+                        frequency: '半年刊 (Semi-annual)',
+                        reviewPeriod: '約 2 個月',
+                        feeStructure: '免審查費',
+                        scope: '探討急重症護理照護、加護病房照護品質、急診處置、急重症儀器使用與重症護理教育。',
+                        acceptedTypes: ['研究論文', '個案報告', '專案改善', '臨床綜論'],
+                        typeLimits: {
+                            '研究論文': { maxWords: '10,000 字', abstractWords: '400 字內' },
+                            '個案報告': { maxWords: '6,500 字', abstractWords: '300 字內' }
+                        },
+                        formatting: {
+                            fontAndSpacing: '中文標楷體，英文 Times New Roman，12pt，雙倍行高',
+                            margins: '上下左右各 2.54 cm',
+                            referenceStyle: 'APA 第七版',
+                            figureLimits: '圖表合計以 5 個為限',
+                            otherRules: '投稿者需尊重研究倫理，數據需真實可重複驗證。'
+                        },
+                        submissionUrl: 'http://www.taccn.org.tw'
+                    },
+                    {
+                        id: 'j12',
+                        name: '臺灣專科護理師學會雜誌',
+                        shortName: '專科護理師雜誌',
+                        enName: 'Journal of Formosan Nurse Practitioners',
+                        issn: '2311-665X',
+                        publisher: '臺灣專科護理師學會',
+                        frequency: '半年刊 (Semi-annual)',
+                        reviewPeriod: '約 2 個月',
+                        feeStructure: '免審查費',
+                        scope: '致力於刊載專科護理師(NP)高級護理實務、進階護理照護、專科護理制度研究與臨床個案分析。',
+                        acceptedTypes: ['研究論文', '個案報告', '專案改善', '高級護理實務'],
+                        typeLimits: {
+                            '研究論文': { maxWords: '10,000 字', abstractWords: '400 字內' },
+                            '個案報告': { maxWords: '7,000 字', abstractWords: '300 字內' }
+                        },
+                        formatting: {
+                            fontAndSpacing: '中文標楷體，12pt，雙倍行高',
+                            margins: '上下左右 2.5 cm',
+                            referenceStyle: 'APA 第七版',
+                            figureLimits: '圖表合計限 5 個',
+                            otherRules: '論文須著重進階護理實務評估與專科護理角色發揮。'
+                        },
+                        submissionUrl: 'https://www.tnpa.org.tw'
+                    }
+                ];
+
+                const showAdminModal = ref(false);
+                const isAdminLoggedIn = ref(false);
+                const loginUsername = ref('');
+                const loginPassword = ref('');
+                const loginError = ref('');
+                const adminTab = ref('marquee');
+
+                // Admin Privilege Management State
+                const defaultAdmins = [
+                    {
+                        id: 'orig-admin-1957',
+                        username: 'KMUH.1957',
+                        password: 'RIS.1957',
+                        empId: '',
+                        empName: '系統管理員',
+                        isOriginal: true
+                    }
+                ];
+
+                const adminUsers = ref(JSON.parse(localStorage.getItem('kmuhAdminUsers')) || defaultAdmins);
+
+                // Ensure original admin is always present and strictly locked
+                const ensureOriginalAdmin = () => {
+                    const origIdx = adminUsers.value.findIndex(u => u.isOriginal || u.username === 'KMUH.1957');
+                    if (origIdx === -1) {
+                        adminUsers.value.unshift(defaultAdmins[0]);
+                    } else {
+                        adminUsers.value[origIdx] = { ...defaultAdmins[0] };
+                    }
+                    localStorage.setItem('kmuhAdminUsers', JSON.stringify(adminUsers.value));
+                };
+                ensureOriginalAdmin();
+
+                const editingAdminId = ref(null);
+                const adminFormError = ref('');
+                const newAdmin = ref({
+                    username: '',
+                    password: '',
+                    empId: '',
+                    empName: ''
+                });
+
+                const resetAdminForm = () => {
+                    editingAdminId.value = null;
+                    adminFormError.value = '';
+                    newAdmin.value = {
+                        username: '',
+                        password: '',
+                        empId: '',
+                        empName: ''
+                    };
+                };
+
+                const startEditAdmin = (user) => {
+                    if (user.isOriginal) return;
+                    editingAdminId.value = user.id;
+                    adminFormError.value = '';
+                    newAdmin.value = {
+                        username: user.username,
+                        password: user.password,
+                        empId: user.empId || '',
+                        empName: user.empName || ''
+                    };
+                };
+
+                const saveAdminForm = () => {
+                    adminFormError.value = '';
+                    if (!newAdmin.value.username.trim() || !newAdmin.value.password.trim()) {
+                        adminFormError.value = '請填寫管理員帳號與密碼！';
+                        return;
+                    }
+
+                    const dup = adminUsers.value.find(u => u.username === newAdmin.value.username.trim() && u.id !== editingAdminId.value);
+                    if (dup) {
+                        adminFormError.value = '此帳號已存在，請使用不同的帳號名稱！';
+                        return;
+                    }
+
+                    if (editingAdminId.value) {
+                        const idx = adminUsers.value.findIndex(u => u.id === editingAdminId.value);
+                        if (idx !== -1 && !adminUsers.value[idx].isOriginal) {
+                            adminUsers.value[idx] = {
+                                ...adminUsers.value[idx],
+                                username: newAdmin.value.username.trim(),
+                                password: newAdmin.value.password.trim(),
+                                empId: newAdmin.value.empId.trim(),
+                                empName: newAdmin.value.empName.trim()
+                            };
+                        }
+                    } else {
+                        adminUsers.value.push({
+                            id: 'admin_' + Date.now(),
+                            username: newAdmin.value.username.trim(),
+                            password: newAdmin.value.password.trim(),
+                            empId: newAdmin.value.empId.trim(),
+                            empName: newAdmin.value.empName.trim(),
+                            isOriginal: false
+                        });
+                    }
+
+                    localStorage.setItem('kmuhAdminUsers', JSON.stringify(adminUsers.value));
+                    resetAdminForm();
+                };
+
+                const removeAdmin = (id) => {
+                    const target = adminUsers.value.find(u => u.id === id);
+                    if (target && target.isOriginal) return;
+                    adminUsers.value = adminUsers.value.filter(u => u.id !== id);
+                    localStorage.setItem('kmuhAdminUsers', JSON.stringify(adminUsers.value));
+                };
+
+                const handleLogin = () => {
+                    const inputUser = loginUsername.value.trim();
+                    const inputPass = loginPassword.value.trim();
+                    const found = adminUsers.value.find(u => u.username === inputUser && u.password === inputPass);
+                    if (found) {
+                        isAdminLoggedIn.value = true;
+                        loginError.value = '';
+                    } else {
+                        loginError.value = '帳號或密碼錯誤，請重新確認！';
+                    }
+                };
+
+                const handleLogout = () => {
+                    isAdminLoggedIn.value = false;
+                    loginUsername.value = '';
+                    loginPassword.value = '';
+                    loginError.value = '';
+                };
+
+                // Marquee State
+                const marqueeSettings = ref(JSON.parse(localStorage.getItem('kmuhMarqueeSettings')) || { enabled: true, speed: 'normal' });
+                const marqueeList = ref(JSON.parse(localStorage.getItem('kmuhMarqueeList')) || defaultMarqueeList);
+                const newMarqueeText = ref('');
+
+                const marqueeSpeedClass = computed(() => {
+                    if (marqueeSettings.value.speed === 'slow') return 'animate-marquee-slow';
+                    if (marqueeSettings.value.speed === 'fast') return 'animate-marquee-fast';
+                    return 'animate-marquee-normal';
+                });
+
+                const saveMarqueeSettings = () => {
+                    localStorage.setItem('kmuhMarqueeSettings', JSON.stringify(marqueeSettings.value));
+                };
+
+                const addMarqueeItem = () => {
+                    if (newMarqueeText.value.trim()) {
+                        marqueeList.value.push(newMarqueeText.value.trim());
+                        newMarqueeText.value = '';
+                        localStorage.setItem('kmuhMarqueeList', JSON.stringify(marqueeList.value));
+                    }
+                };
+
+                const removeMarqueeItem = (idx) => {
+                    marqueeList.value.splice(idx, 1);
+                    localStorage.setItem('kmuhMarqueeList', JSON.stringify(marqueeList.value));
+                };
+
+                const resetMarqueeToDefault = () => {
+                    marqueeList.value = [...defaultMarqueeList];
+                    localStorage.setItem('kmuhMarqueeList', JSON.stringify(marqueeList.value));
+                };
+
+                // Conferences State
+                const conferences = ref(JSON.parse(localStorage.getItem('kmuhConferencesList')) || defaultConferences);
+                const newConf = ref({
+                    title: "",
+                    organizer: "",
+                    eventDate: "",
+                    deadline: "",
+                    formats: "口頭報告, 海報發表",
+                    website: "",
+                    status: "徵稿中"
+                });
+
+                const saveConferencesInStorage = () => {
+                    localStorage.setItem('kmuhConferencesList', JSON.stringify(conferences.value));
+                };
+
+                const addConference = () => {
+                    if (!newConf.value.title.trim() || !newConf.value.deadline.trim()) return;
+                    const formatsArr = newConf.value.formats.split(',').map(f => f.trim()).filter(f => f);
+                    conferences.value.unshift({
+                        id: Date.now(),
+                        title: newConf.value.title.trim(),
+                        organizer: newConf.value.organizer.trim() || '護理部',
+                        eventDate: newConf.value.eventDate.trim() || '未定',
+                        deadline: newConf.value.deadline.trim(),
+                        formats: formatsArr.length > 0 ? formatsArr : ['口頭報告'],
+                        website: newConf.value.website.trim() || '#',
+                        status: '徵稿中'
+                    });
+                    saveConferencesInStorage();
+                    newConf.value = { title: "", organizer: "", eventDate: "", deadline: "", formats: "口頭報告, 海報發表", website: "", status: "徵稿中" };
+                };
+
+                const removeConference = (id) => {
+                    conferences.value = conferences.value.filter(c => c.id !== id);
+                    saveConferencesInStorage();
+                };
+
+                const resetConferencesToDefault = () => {
+                    conferences.value = [...defaultConferences];
+                    saveConferencesInStorage();
+                };
+
+                // Conference Click Tracker
+                const conferenceClicks = ref(JSON.parse(localStorage.getItem('kmuhConferenceClicks')) || {});
+                const trackConferenceClick = (id) => {
+                    conferenceClicks.value[id] = (conferenceClicks.value[id] || 0) + 1;
+                    localStorage.setItem('kmuhConferenceClicks', JSON.stringify(conferenceClicks.value));
+                };
+
+                // Date comparison logic for submission deadlines
+                const isConferenceExpired = (deadlineStr) => {
+                    if (!deadlineStr) return false;
+                    const normalizedStr = deadlineStr.trim().replace(/\//g, '-');
+                    const parts = normalizedStr.split('-');
+                    if (parts.length < 3) return false;
+                    
+                    const year = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10) - 1;
+                    const day = parseInt(parts[2], 10);
+                    
+                    const deadlineDate = new Date(year, month, day, 23, 59, 59, 999);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    return today > deadlineDate;
+                };
+
+                const getConferenceStatus = (conf) => {
+                    if (isConferenceExpired(conf.deadline)) {
+                        return '徵稿截止';
+                    }
+                    return conf.status || '徵稿中';
+                };
+
+                const activeConferencesCount = computed(() => {
+                    return conferences.value.filter(c => !isConferenceExpired(c.deadline)).length;
+                });
+
+                // Journals Core State
+                const journals = ref(JSON.parse(localStorage.getItem('kmuhJournalsList')) || defaultJournalsList);
+
+                // Admin Journal Editing State
+                const editingJournalId = ref(null);
+                const newJournal = ref({
+                    name: '',
+                    shortName: '',
+                    enName: '',
+                    issn: '',
+                    publisher: '',
+                    frequency: '季刊 (Quarterly)',
+                    reviewPeriod: '約 2 個月',
+                    feeStructure: '免審查費',
+                    scope: '',
+                    acceptedTypesStr: '研究論文, 個案報告, 護理專案',
+                    submissionUrl: '',
+                    abstractMaxWords: '300 字內',
+                    type1Name: '研究論文',
+                    type1Words: '10,000 字',
+                    type2Name: '個案報告',
+                    type2Words: '7,000 字',
+                    fontAndSpacing: '中文標楷體，12pt，雙倍行高',
+                    margins: '上下左右各 2.5 cm',
+                    referenceStyle: 'APA 第七版',
+                    figureLimits: '圖表合計不超過 5 個',
+                    otherRules: ''
+                });
+
+                const saveJournalsInStorage = () => {
+                    localStorage.setItem('kmuhJournalsList', JSON.stringify(journals.value));
+                };
+
+                const resetJournalForm = () => {
+                    editingJournalId.value = null;
+                    newJournal.value = {
+                        name: '',
+                        shortName: '',
+                        enName: '',
+                        issn: '',
+                        publisher: '',
+                        frequency: '季刊 (Quarterly)',
+                        reviewPeriod: '約 2 個月',
+                        feeStructure: '免審查費',
+                        scope: '',
+                        acceptedTypesStr: '研究論文, 個案報告, 護理專案',
+                        submissionUrl: '',
+                        abstractMaxWords: '300 字內',
+                        type1Name: '研究論文',
+                        type1Words: '10,000 字',
+                        type2Name: '個案報告',
+                        type2Words: '7,000 字',
+                        fontAndSpacing: '中文標楷體，12pt，雙倍行高',
+                        margins: '上下左右各 2.5 cm',
+                        referenceStyle: 'APA 第七版',
+                        figureLimits: '圖表合計不超過 5 個',
+                        otherRules: ''
+                    };
+                };
+
+                const startEditJournal = (j) => {
+                    editingJournalId.value = j.id;
+                    const keys = j.typeLimits ? Object.keys(j.typeLimits) : [];
+                    const firstKey = keys[0] || '研究論文';
+                    const secondKey = keys[1] || '個案報告';
+
+                    newJournal.value = {
+                        name: j.name,
+                        shortName: j.shortName || j.name,
+                        enName: j.enName,
+                        issn: j.issn,
+                        publisher: j.publisher,
+                        frequency: j.frequency,
+                        reviewPeriod: j.reviewPeriod,
+                        feeStructure: j.feeStructure,
+                        scope: j.scope,
+                        acceptedTypesStr: Array.isArray(j.acceptedTypes) ? j.acceptedTypes.join(', ') : '',
+                        submissionUrl: j.submissionUrl,
+                        abstractMaxWords: (j.typeLimits && j.typeLimits[firstKey]) ? j.typeLimits[firstKey].abstractWords : '300 字內',
+                        type1Name: firstKey,
+                        type1Words: (j.typeLimits && j.typeLimits[firstKey]) ? j.typeLimits[firstKey].maxWords : '10,000 字',
+                        type2Name: secondKey,
+                        type2Words: (j.typeLimits && j.typeLimits[secondKey]) ? j.typeLimits[secondKey].maxWords : '7,000 字',
+                        fontAndSpacing: (j.formatting) ? j.formatting.fontAndSpacing : '中文標楷體，12pt，雙倍行高',
+                        margins: (j.formatting) ? j.formatting.margins : '上下左右各 2.5 cm',
+                        referenceStyle: (j.formatting) ? j.formatting.referenceStyle : 'APA 第七版',
+                        figureLimits: (j.formatting) ? j.formatting.figureLimits : '圖表合計不超過 5 個',
+                        otherRules: (j.formatting && j.formatting.otherRules) ? j.formatting.otherRules : ''
+                    };
+                };
+
+                const saveJournalForm = () => {
+                    if (!newJournal.value.name.trim() || !newJournal.value.issn.trim()) return;
+
+                    const types = newJournal.value.acceptedTypesStr
+                        .split(',')
+                        .map(t => t.trim())
+                        .filter(t => t);
+
+                    const typeLimitsObj = {};
+                    const absWords = newJournal.value.abstractMaxWords.trim() || '300 字內';
+
+                    if (newJournal.value.type1Name && newJournal.value.type1Name.trim()) {
+                        typeLimitsObj[newJournal.value.type1Name.trim()] = {
+                            maxWords: newJournal.value.type1Words.trim() || '10,000 字',
+                            abstractWords: absWords
+                        };
+                    }
+
+                    if (newJournal.value.type2Name && newJournal.value.type2Name.trim()) {
+                        typeLimitsObj[newJournal.value.type2Name.trim()] = {
+                            maxWords: newJournal.value.type2Words.trim() || '7,000 字',
+                            abstractWords: absWords
+                        };
+                    }
+
+                    if (Object.keys(typeLimitsObj).length === 0) {
+                        typeLimitsObj['研究論文'] = { maxWords: '10,000 字', abstractWords: absWords };
+                        typeLimitsObj['個案報告'] = { maxWords: '7,000 字', abstractWords: absWords };
+                    }
+
+                    const formattingObj = {
+                        fontAndSpacing: newJournal.value.fontAndSpacing.trim() || '中文標楷體，12pt，雙倍行高',
+                        margins: newJournal.value.margins.trim() || '上下左右各 2.5 cm',
+                        referenceStyle: newJournal.value.referenceStyle.trim() || 'APA 第七版',
+                        figureLimits: newJournal.value.figureLimits.trim() || '圖表合計不超過 5 個',
+                        otherRules: newJournal.value.otherRules.trim() || ''
+                    };
+
+                    if (editingJournalId.value) {
+                        const idx = journals.value.findIndex(j => j.id === editingJournalId.value);
+                        if (idx !== -1) {
+                            journals.value[idx] = {
+                                ...journals.value[idx],
+                                name: newJournal.value.name.trim(),
+                                shortName: newJournal.value.shortName.trim() || newJournal.value.name.trim(),
+                                enName: newJournal.value.enName.trim(),
+                                issn: newJournal.value.issn.trim(),
+                                publisher: newJournal.value.publisher.trim(),
+                                frequency: newJournal.value.frequency.trim(),
+                                reviewPeriod: newJournal.value.reviewPeriod.trim(),
+                                feeStructure: newJournal.value.feeStructure.trim(),
+                                scope: newJournal.value.scope.trim(),
+                                acceptedTypes: types.length > 0 ? types : ['研究論文'],
+                                submissionUrl: newJournal.value.submissionUrl.trim() || '#',
+                                typeLimits: typeLimitsObj,
+                                formatting: formattingObj
+                            };
+                        }
+                    } else {
+                        journals.value.unshift({
+                            id: 'j_' + Date.now(),
+                            name: newJournal.value.name.trim(),
+                            shortName: newJournal.value.shortName.trim() || newJournal.value.name.trim(),
+                            enName: newJournal.value.enName.trim(),
+                            issn: newJournal.value.issn.trim(),
+                            publisher: newJournal.value.publisher.trim(),
+                            frequency: newJournal.value.frequency.trim(),
+                            reviewPeriod: newJournal.value.reviewPeriod.trim(),
+                            feeStructure: newJournal.value.feeStructure.trim(),
+                            scope: newJournal.value.scope.trim(),
+                            acceptedTypes: types.length > 0 ? types : ['研究論文'],
+                            submissionUrl: newJournal.value.submissionUrl.trim() || '#',
+                            typeLimits: typeLimitsObj,
+                            formatting: formattingObj
+                        });
+                    }
+
+                    saveJournalsInStorage();
+                    resetJournalForm();
+                };
+
+                const removeJournal = (id) => {
+                    journals.value = journals.value.filter(j => j.id !== id);
+                    saveJournalsInStorage();
+                };
+
+                const resetJournalsToDefault = () => {
+                    journals.value = [...defaultJournalsList];
+                    saveJournalsInStorage();
+                };
+
+                const journalViews = ref(JSON.parse(localStorage.getItem('kmuhJournalViews')) || {});
+                const journalPortalClicks = ref(JSON.parse(localStorage.getItem('kmuhJournalPortalClicks')) || {});
+
+                const trackJournalView = (id) => {
+                    journalViews.value[id] = (journalViews.value[id] || 0) + 1;
+                    localStorage.setItem('kmuhJournalViews', JSON.stringify(journalViews.value));
+                };
+
+                const trackPortalClick = (id) => {
+                    journalPortalClicks.value[id] = (journalPortalClicks.value[id] || 0) + 1;
+                    localStorage.setItem('kmuhJournalPortalClicks', JSON.stringify(journalPortalClicks.value));
+                };
+
+                const resetStats = () => {
+                    journalViews.value = {};
+                    journalPortalClicks.value = {};
+                    conferenceClicks.value = {};
+                    localStorage.removeItem('kmuhJournalViews');
+                    localStorage.removeItem('kmuhJournalPortalClicks');
+                    localStorage.removeItem('kmuhConferenceClicks');
+                };
+
+                const searchQuery = ref('');
+
+                const resetFilters = () => {
+                    searchQuery.value = '';
+                };
+
+                const filteredJournals = computed(() => {
+                    return journals.value.filter(j => {
+                        const q = searchQuery.value.trim().toLowerCase();
+                        if (!q) return true;
+                        
+                        const matchName = j.name.toLowerCase().includes(q) || j.enName.toLowerCase().includes(q);
+                        const matchIssn = j.issn.toLowerCase().includes(q);
+                        const matchPub = j.publisher.toLowerCase().includes(q);
+                        const matchTypes = j.acceptedTypes.some(t => t.toLowerCase().includes(q));
+                        
+                        return matchName || matchIssn || matchPub || matchTypes;
+                    });
+                });
+
+                // Comparison Drawer / Modal State
+                const compareList = ref([]);
+                const showCompareModal = ref(false);
+
+                const getJournal = (id) => journals.value.find(j => j.id === id) || {};
+                const getJournalName = (id) => getJournal(id).name || id;
+
+                const removeCompare = (id) => {
+                    compareList.value = compareList.value.filter(item => item !== id);
+                };
+
+                // Subpage Drawer State
+                const selectedJournal = ref(null);
+                const activeTab = ref('info');
+
+                const subpageTabs = [
+                    { id: 'info', name: '基本資訊與範疇', icon: 'fa-solid fa-circle-info' },
+                    { id: 'limits', name: '字數與頁數限制', icon: 'fa-solid fa-file-lines' },
+                    { id: 'formatting', name: '排版與格式規範', icon: 'fa-solid fa-pen-ruler' }
+                ];
+
+                const selectJournal = (journal) => {
+                    selectedJournal.value = journal;
+                    activeTab.value = 'info';
+                    trackJournalView(journal.id);
+                };
+
+                const closeSubpage = () => {
+                    selectedJournal.value = null;
+                };
+
+                // Statistics Bars Calculation
+                const statTab = ref('journals');
+
+                const getStatBarWidth = (id) => {
+                    const views = journalViews.value[id] || 0;
+                    const clicks = journalPortalClicks.value[id] || 0;
+                    const totalAction = views + clicks * 2;
+                    
+                    let maxVal = 1;
+                    journals.value.forEach(j => {
+                        const v = journalViews.value[j.id] || 0;
+                        const c = journalPortalClicks.value[j.id] || 0;
+                        const score = v + c * 2;
+                        if (score > maxVal) maxVal = score;
+                    });
+
+                    return Math.min(100, Math.round((totalAction / maxVal) * 100));
+                };
+
+                const getConfStatBarWidth = (id) => {
+                    const clicks = conferenceClicks.value[id] || 0;
+                    let maxVal = 1;
+                    conferences.value.forEach(c => {
+                        const count = conferenceClicks.value[c.id] || 0;
+                        if (count > maxVal) maxVal = count;
+                    });
+                    return Math.min(100, Math.round((clicks / maxVal) * 100));
+                };
+
+                return {
+                    // Honor Roll
+                    honorRollList,
+                    editingHonorId,
+                    newHonor,
+                    handlePhotoUpload,
+                    resetHonorForm,
+                    startEditHonor,
+                    saveHonorForm,
+                    removeHonorItem,
+                    resetHonorToDefault,
+
+                    // Conferences
+                    conferences,
+                    newConf,
+                    addConference,
+                    removeConference,
+                    resetConferencesToDefault,
+                    conferenceClicks,
+                    trackConferenceClick,
+                    isConferenceExpired,
+                    getConferenceStatus,
+                    activeConferencesCount,
+
+                    // Journals
+                    journals,
+                    editingJournalId,
+                    newJournal,
+                    resetJournalForm,
+                    startEditJournal,
+                    saveJournalForm,
+                    removeJournal,
+                    resetJournalsToDefault,
+
+                    // Auth
+                    showAdminModal,
+                    isAdminLoggedIn,
+                    loginUsername,
+                    loginPassword,
+                    loginError,
+                    adminTab,
+                    handleLogin,
+                    handleLogout,
+
+                    // Admin Privilege Management
+                    adminUsers,
+                    editingAdminId,
+                    adminFormError,
+                    newAdmin,
+                    resetAdminForm,
+                    startEditAdmin,
+                    saveAdminForm,
+                    removeAdmin,
+
+                    // Marquee
+                    marqueeSettings,
+                    marqueeList,
+                    newMarqueeText,
+                    marqueeSpeedClass,
+                    saveMarqueeSettings,
+                    addMarqueeItem,
+                    removeMarqueeItem,
+                    resetMarqueeToDefault,
+
+                    // Search & Filter
+                    searchQuery,
+                    resetFilters,
+                    filteredJournals,
+
+                    // Compare & Details Drawer
+                    compareList,
+                    showCompareModal,
+                    getJournal,
+                    getJournalName,
+                    removeCompare,
+                    selectedJournal,
+                    activeTab,
+                    subpageTabs,
+                    selectJournal,
+                    closeSubpage,
+
+                    // Stats
+                    journalViews,
+                    journalPortalClicks,
+                    trackPortalClick,
+                    resetStats,
+                    statTab,
+                    getStatBarWidth,
+                    getConfStatBarWidth
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
