@@ -1,5 +1,13 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+<!-- =============================================================
+     高雄醫學大學附設中和紀念醫院 護理部 學術資訊網
+     版本：Firebase 安全版 v3　　建置日期：2026-09-07
+     Firebase 專案：kmuh-ris
+     ─────────────────────────────────────────────
+     如何確認版本正確：在網頁上按 Ctrl+U 檢視原始碼，
+     若看得到這段註解，就是正確的版本。
+     ============================================================= -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +18,11 @@
     
     <!-- Vue 3 CDN -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- Firebase SDK (compat 版，可直接用 <script> 載入) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -760,7 +773,7 @@
                             </div>
                             <div>
                                 <h3 class="font-bold text-base">管理員登入驗證</h3>
-                                <p class="text-xs text-slate-400">請輸入管理員權限帳號與密碼</p>
+                                <p class="text-xs text-slate-400">由 Firebase Authentication 驗證身分</p>
                             </div>
                         </div>
                         <button @click="showAdminModal = false" class="text-slate-400 hover:text-white transition cursor-pointer">
@@ -770,13 +783,13 @@
 
                     <form @submit.prevent="handleLogin" class="p-6 space-y-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">管理員帳號 (Account)</label>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">管理員帳號 / Email</label>
                             <div class="relative">
                                 <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                                 <input 
                                     v-model="loginUsername" 
                                     type="text" 
-                                    placeholder="請輸入帳號" 
+                                    placeholder="請輸入帳號或 Email" 
                                     class="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none"
                                 >
                             </div>
@@ -795,13 +808,19 @@
                             </div>
                         </div>
 
-                        <div v-if="loginError" class="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-600 text-xs font-bold flex items-center gap-2">
-                            <i class="fa-solid fa-circle-exclamation text-rose-500"></i> {{ loginError }}
+                        <div v-if="loginError" class="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-600 text-xs font-bold flex items-start gap-2 break-all">
+                            <i class="fa-solid fa-circle-exclamation text-rose-500 mt-0.5 shrink-0"></i> <span>{{ loginError }}</span>
+                        </div>
+
+                        <div class="flex justify-end">
+                            <button type="button" @click="handleForgotPassword" class="text-[11px] text-slate-500 hover:text-teal-700 underline underline-offset-2 transition cursor-pointer">
+                                忘記密碼？寄送重設信
+                            </button>
                         </div>
 
                         <div class="pt-2 flex gap-2">
-                            <button type="submit" class="flex-grow bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
-                                <i class="fa-solid fa-right-to-bracket"></i> 驗證登入
+                            <button type="submit" :disabled="loginBusy" class="flex-grow bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid" :class="loginBusy ? 'fa-spinner fa-spin' : 'fa-right-to-bracket'"></i> {{ loginBusy ? '驗證中…' : '驗證登入' }}
                             </button>
                             <button type="button" @click="showAdminModal = false" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer">
                                 取消
@@ -1314,21 +1333,45 @@
 
                         <!-- TAB 5: ADMIN PRIVILEGE MANAGEMENT -->
                         <div v-if="adminTab === 'admins'" class="space-y-6">
+
+                            <!-- 目前登入身分 -->
+                            <div class="bg-teal-50 border border-teal-200 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
+                                <div class="text-xs text-teal-900 min-w-0">
+                                    <span class="font-bold">目前登入：</span>
+                                    <span class="font-mono break-all">{{ myEmail }}</span>
+                                    <span v-if="myProfile && myProfile.empName" class="font-bold">（{{ myProfile.empName }}）</span>
+                                </div>
+                                <button @click="changeMyPassword" class="bg-white hover:bg-teal-100 text-teal-700 border border-teal-300 px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer shrink-0 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-key"></i> 修改我的密碼
+                                </button>
+                            </div>
+
+                            <!-- 安全性說明 -->
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-[11px] text-slate-600 leading-relaxed flex gap-2.5">
+                                <i class="fa-solid fa-shield-halved text-teal-600 mt-0.5 shrink-0"></i>
+                                <span>
+                                    管理員密碼由 <span class="font-bold">Firebase Authentication</span> 加密保管，<span class="font-bold text-slate-800">不會存在資料庫中，任何人（包含你）都無法查看</span>。
+                                    忘記密碼時，若帳號是真實 Email 可自行點「忘記密碼」重設；否則請在 Firebase 主控台 → Authentication 代為重設。
+                                </span>
+                            </div>
+
                             <!-- Add/Edit Admin Form -->
                             <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                                 <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
-                                    <i class="fa-solid fa-user-plus text-purple-600"></i> {{ editingAdminId ? '編輯管理員帳號' : '新增管理員帳號' }}
+                                    <i class="fa-solid fa-user-plus text-purple-600"></i> {{ editingAdminId ? '編輯管理員資料' : '新增管理員帳號' }}
                                 </h4>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">管理員帳號 *</label>
-                                        <input v-model="newAdmin.username" type="text" placeholder="請設定登入帳號" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">登入帳號 / Email *</label>
+                                        <input v-model="newAdmin.account" :disabled="!!editingAdminId" type="text" placeholder="建議填真實 Email" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none disabled:bg-slate-200 disabled:text-slate-500">
+                                        <p class="text-[10px] text-slate-400 mt-1">填真實 Email 才能自行重設密碼；建立後不可修改。</p>
                                     </div>
 
                                     <div>
-                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">管理員密碼 *</label>
-                                        <input v-model="newAdmin.password" type="text" placeholder="請設定登入密碼" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none">
+                                        <label class="block text-[11px] font-bold text-slate-600 mb-1">初始密碼 *（至少 6 碼）</label>
+                                        <input v-model="newAdmin.password" :disabled="!!editingAdminId" type="text" placeholder="請設定初始密碼" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-teal-500 outline-none disabled:bg-slate-200 disabled:text-slate-500">
+                                        <p class="text-[10px] text-slate-400 mt-1">交給本人後，請提醒他登入後自行更改。</p>
                                     </div>
 
                                     <div>
@@ -1342,13 +1385,17 @@
                                     </div>
                                 </div>
 
-                                <div v-if="adminFormError" class="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-600 text-xs font-bold flex items-center gap-2">
-                                    <i class="fa-solid fa-circle-exclamation text-rose-500"></i> {{ adminFormError }}
+                                <div v-if="adminFormError" class="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-600 text-xs font-bold flex items-start gap-2 break-all">
+                                    <i class="fa-solid fa-circle-exclamation text-rose-500 mt-0.5 shrink-0"></i> <span>{{ adminFormError }}</span>
+                                </div>
+                                <div v-if="adminFormOk" class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 text-xs font-bold flex items-start gap-2">
+                                    <i class="fa-solid fa-circle-check text-emerald-500 mt-0.5 shrink-0"></i> <span>{{ adminFormOk }}</span>
                                 </div>
 
                                 <div class="flex gap-2">
-                                    <button @click="saveAdminForm" class="flex-grow bg-purple-700 hover:bg-purple-800 text-white py-2 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer">
-                                        <i class="fa-solid fa-floppy-disk"></i> {{ editingAdminId ? '更新管理員資料' : '確認新增管理員' }}
+                                    <button @click="saveAdminForm" :disabled="adminBusy" class="flex-grow bg-purple-700 hover:bg-purple-800 disabled:bg-slate-300 text-white py-2 rounded-lg font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer">
+                                        <i class="fa-solid" :class="adminBusy ? 'fa-spinner fa-spin' : 'fa-floppy-disk'"></i>
+                                        {{ adminBusy ? '處理中…' : (editingAdminId ? '更新管理員資料' : '確認新增管理員') }}
                                     </button>
                                     <button v-if="editingAdminId" @click="resetAdminForm" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold text-xs transition cursor-pointer">
                                         取消編輯
@@ -1363,42 +1410,48 @@
                                 </div>
 
                                 <div class="space-y-2">
-                                    <div v-for="user in adminUsers" :key="user.id" class="bg-white border rounded-lg p-3.5 flex items-center justify-between gap-3 transition" :class="user.isOriginal ? 'border-amber-300 bg-amber-50/20' : 'border-slate-200 hover:border-purple-300'">
+                                    <div v-for="user in adminUsers" :key="user.id" class="bg-white border rounded-lg p-3.5 flex items-center justify-between gap-3 transition" :class="user.id === myUid ? 'border-teal-300 bg-teal-50/30' : 'border-slate-200 hover:border-purple-300'">
                                         <div class="space-y-1 min-w-0 flex-grow">
-                                            <div class="flex items-center gap-2">
-                                                <span class="font-bold text-slate-800 text-xs">{{ user.username }}</span>
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <span class="font-bold text-slate-800 text-xs break-all">{{ user.account || user.email || user.id }}</span>
                                                 <span v-if="user.empName" class="text-xs text-slate-700 font-bold">({{ user.empName }})</span>
-                                                <span v-if="user.isOriginal" class="bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
-                                                    <i class="fa-solid fa-shield-halved text-amber-600"></i> 原始管理員
+                                                <span v-if="user.id === myUid" class="bg-teal-100 text-teal-800 border border-teal-300 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                                                    <i class="fa-solid fa-user-check text-teal-600"></i> 本人
                                                 </span>
-                                                <span v-else-if="user.empId" class="bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-bold px-2 py-0.5 rounded">
+                                                <span v-if="user.empId" class="bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-bold px-2 py-0.5 rounded">
                                                     職編: {{ user.empId }}
                                                 </span>
                                             </div>
-                                            <p class="text-[11px] text-slate-500 font-medium">
-                                                <span class="text-slate-400">密碼：</span><span class="font-mono">{{ user.password }}</span>
-                                                <span v-if="user.empId" class="ml-3 text-slate-400">| 職編：{{ user.empId }}</span>
+                                            <p class="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                                                <i class="fa-solid fa-lock text-[10px]"></i> 密碼由 Firebase 加密保管，不顯示於此
                                             </p>
                                         </div>
 
                                         <!-- Actions -->
                                         <div class="flex items-center gap-1.5 shrink-0">
-                                            <template v-if="user.isOriginal">
-                                                <span class="text-[11px] text-amber-700 bg-amber-100/80 px-2.5 py-1 rounded-md font-bold flex items-center gap-1 select-none">
-                                                    <i class="fa-solid fa-lock text-xs"></i> 系統鎖定 (不可修改/刪除)
+                                            <button @click="startEditAdmin(user)" class="text-slate-500 hover:text-purple-700 p-1.5 transition cursor-pointer" title="編輯姓名與職編">
+                                                <i class="fa-solid fa-pen-to-square"></i>
+                                            </button>
+                                            <template v-if="user.id === myUid">
+                                                <span class="text-[11px] text-teal-700 bg-teal-100/80 px-2.5 py-1 rounded-md font-bold flex items-center gap-1 select-none">
+                                                    <i class="fa-solid fa-lock text-xs"></i> 不可移除自己
                                                 </span>
                                             </template>
-                                            <template v-else>
-                                                <button @click="startEditAdmin(user)" class="text-slate-500 hover:text-purple-700 p-1.5 transition cursor-pointer" title="編輯帳號">
-                                                    <i class="fa-solid fa-pen-to-square"></i>
-                                                </button>
-                                                <button @click="removeAdmin(user.id)" class="text-slate-400 hover:text-rose-600 p-1.5 transition cursor-pointer" title="刪除帳號">
-                                                    <i class="fa-solid fa-trash-can"></i>
-                                                </button>
-                                            </template>
+                                            <button v-else @click="removeAdmin(user.id)" class="text-slate-400 hover:text-rose-600 p-1.5 transition cursor-pointer" title="撤銷管理權限">
+                                                <i class="fa-solid fa-user-slash"></i>
+                                            </button>
                                         </div>
                                     </div>
+
+                                    <div v-if="adminUsers.length === 0" class="text-center text-xs text-slate-400 py-6 border border-dashed border-slate-300 rounded-lg">
+                                        讀取中，或尚未在 Firestore 的 kmuhAdmins 集合建立任何管理員。
+                                    </div>
                                 </div>
+
+                                <p class="text-[11px] text-slate-500 leading-relaxed bg-amber-50 border border-amber-200 rounded-lg p-3 flex gap-2">
+                                    <i class="fa-solid fa-circle-info text-amber-600 mt-0.5 shrink-0"></i>
+                                    <span>「撤銷」只會移除管理權限，該帳號仍可登入但無法修改任何內容。若要徹底刪除登入帳號，請到 Firebase 主控台 → Authentication → Users 移除。</span>
+                                </p>
                             </div>
                         </div>
 
@@ -1433,6 +1486,217 @@
     </div>
 
     <script>
+        console.log('%c KMUH 學術資訊網 — Firebase 安全版 v3 (2026-09-07) ', 'background:#0f766e;color:#fff;padding:3px 8px;border-radius:4px;font-weight:bold');
+
+        /* ==========================================================
+           【唯一要改的地方】把下面整段換成你自己的 Firebase 設定
+
+           如果你已經在舊版 index.html 填過，直接把舊檔的
+           firebaseConfig = { ... } 整段複製過來覆蓋即可，
+           Firebase 主控台完全不用再動——資料會自動接上。
+
+           還沒填過的話：
+             Firebase 主控台 → 齒輪(專案設定) → 一般
+             → 最下方「你的應用程式」→ 複製 firebaseConfig
+           ========================================================== */
+        const firebaseConfig = {
+            apiKey: "AIzaSyCUsi7jJZwrkCxLvQRV-Dj9y2_QXBCZgFA",
+            authDomain: "kmuh-ris.firebaseapp.com",
+            projectId: "kmuh-ris",
+            storageBucket: "kmuh-ris.firebasestorage.app",
+            messagingSenderId: "216636072301",
+            appId: "1:216636072301:web:5974061e2ff52d120cfa64",
+            measurementId: "G-T7B3BP33BD"
+        };
+
+        /* ---------- 以下不用改 ---------- */
+        const CLOUD_COLLECTION = 'kmuhData';    // 公開內容（所有人可讀，管理員可寫）
+        const ADMIN_COLLECTION = 'kmuhAdmins';  // 管理員名單（文件 ID = 該帳號的 UID）
+        const ADMIN_EMAIL_DOMAIN = 'kmuh-ris.local'; // 帳號沒有 @ 時自動補上的網域
+        let db = null;
+        let auth = null;
+        const cloudHooks = {};
+        const pendingSeed = {};   // 尚未建立、等管理員登入後才寫入的預設資料
+
+        // 登入狀態（給 Vue 用的響應式物件）
+        const authState = Vue.reactive({
+            ready: false,      // Firebase 是否已回報過登入狀態
+            uid: null,
+            email: '',
+            isAdmin: false,    // uid 是否存在於 kmuhAdmins
+            profile: null
+        });
+
+        // 帳號輸入轉成 Email：有 @ 就照用，沒有就補上內部網域
+        function toLoginEmail(input) {
+            const v = String(input || '').trim().toLowerCase();
+            if (!v) return '';
+            return v.indexOf('@') >= 0 ? v : (v + '@' + ADMIN_EMAIL_DOMAIN);
+        }
+
+        // Firebase 錯誤碼轉成看得懂的中文
+        function authErrorMessage(err) {
+            const code = (err && err.code) || '';
+            const map = {
+                'auth/invalid-email': '帳號格式不正確。',
+                'auth/user-not-found': '帳號或密碼錯誤，請重新確認。',
+                'auth/wrong-password': '帳號或密碼錯誤，請重新確認。',
+                'auth/invalid-credential': '帳號或密碼錯誤，請重新確認。',
+                'auth/invalid-login-credentials': '帳號或密碼錯誤，請重新確認。',
+                'auth/user-disabled': '此帳號已被停用，請聯絡系統管理員。',
+                'auth/too-many-requests': '嘗試次數過多，請稍候幾分鐘再試。',
+                'auth/network-request-failed': '網路連線失敗，請檢查網路後再試。',
+                'auth/weak-password': '密碼強度不足，請至少設定 6 個字元。',
+                'auth/email-already-in-use': '這個帳號已經存在於系統中。',
+                'auth/requires-recent-login': '基於安全考量，請先登出再重新登入一次，然後立即修改密碼。',
+                'auth/operation-not-allowed': '尚未在 Firebase 主控台啟用「電子郵件/密碼」登入方式。',
+                'auth/admin-restricted-operation': '尚未在 Firebase 主控台啟用「匿名」登入方式。'
+            };
+            return map[code] || ((err && err.message) || '發生未知錯誤。');
+        }
+
+        function showSetupBanner(msg) {
+            const bar = document.createElement('div');
+            bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b91c1c;color:#fff;padding:10px 16px;font-size:13px;text-align:center;font-family:sans-serif';
+            bar.textContent = msg;
+            if (document.body) document.body.appendChild(bar);
+            else document.addEventListener('DOMContentLoaded', () => document.body.appendChild(bar));
+        }
+
+        if (String(firebaseConfig.apiKey).indexOf('PASTE_') === 0) {
+            showSetupBanner('⚠️ 尚未填入 Firebase 設定：請打開這個 HTML，把 firebaseConfig 換成你專案的設定值（可從舊版檔案複製）。目前資料只存在這台電腦。');
+            console.warn('[Firebase] firebaseConfig 尚未填寫，雲端同步未啟用。');
+        } else {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                auth = firebase.auth();
+                console.log('[Firebase] 初始化成功，專案：', firebaseConfig.projectId);
+
+                auth.onAuthStateChanged(async (user) => {
+                    if (!user) {
+                        // 沒有任何登入身分 → 以匿名身分登入，讓一般訪客的點擊統計仍能寫入
+                        authState.uid = null;
+                        authState.email = '';
+                        authState.isAdmin = false;
+                        authState.profile = null;
+                        try {
+                            await auth.signInAnonymously();
+                        } catch (e) {
+                            authState.ready = true;
+                            console.error('[Firebase] 匿名登入失敗（請到 Authentication → Sign-in method 啟用「匿名」）：', e.code, e.message);
+                        }
+                        return;
+                    }
+
+                    authState.uid = user.uid;
+                    authState.email = user.email || '';
+
+                    if (user.isAnonymous) {
+                        authState.isAdmin = false;
+                        authState.profile = null;
+                    } else {
+                        try {
+                            const snap = await db.collection(ADMIN_COLLECTION).doc(user.uid).get();
+                            authState.isAdmin = snap.exists;
+                            authState.profile = snap.exists ? snap.data() : null;
+                        } catch (e) {
+                            authState.isAdmin = false;
+                            console.error('[Firestore] 讀取管理員名單失敗：', e.code, e.message);
+                        }
+                    }
+                    authState.ready = true;
+
+                    // 管理員登入後，補寫先前因權限不足而沒能建立的預設資料
+                    if (authState.isAdmin) {
+                        Object.keys(pendingSeed).forEach((docId) => {
+                            const v = pendingSeed[docId];
+                            delete pendingSeed[docId];
+                            cloudSave(docId, v, true);
+                        });
+                        // 一次性清理：舊版把管理員帳密明文存在 Firestore，這裡順手刪除
+                        db.collection(CLOUD_COLLECTION).doc('adminUsers').get().then((d) => {
+                            if (d.exists) {
+                                return db.collection(CLOUD_COLLECTION).doc('adminUsers').delete()
+                                    .then(() => console.log('[安全性] 已刪除舊版明文密碼文件 kmuhData/adminUsers。'));
+                            }
+                        }).catch(() => {});
+                    }
+                });
+            } catch (e) {
+                console.error('[Firebase] 初始化失敗：', e);
+                showSetupBanner('⚠️ Firebase 初始化失敗，請檢查 firebaseConfig 是否正確（詳細訊息請按 F12 看主控台）。');
+            }
+        }
+
+        // 本機快取：離線或雲端還沒回應時先顯示上次內容，畫面不會空白
+        function cacheGet(docId, fallback) {
+            try {
+                const raw = localStorage.getItem('kmuhCache_' + docId);
+                return raw ? JSON.parse(raw) : fallback;
+            } catch (e) { return fallback; }
+        }
+        function cacheSet(docId, value) {
+            try { localStorage.setItem('kmuhCache_' + docId, JSON.stringify(value)); } catch (e) {}
+        }
+
+        // 建立一個與 Firestore 雙向即時同步的 ref
+        function cloudRef(docId, defaultValue) {
+            const r = Vue.ref(cacheGet(docId, defaultValue));
+            if (!db) return r;
+
+            db.collection(CLOUD_COLLECTION).doc(docId).onSnapshot(
+                (snap) => {
+                    if (snap.exists && snap.data() && snap.data().value !== undefined) {
+                        r.value = snap.data().value;
+                        cacheSet(docId, r.value);
+                    } else if (authState.isAdmin) {
+                        // 雲端還沒這筆資料 → 管理員登入時才寫入預設值
+                        cloudSave(docId, r.value, true);
+                    } else {
+                        // 一般訪客沒有寫入權限，先記下來，等管理員登入再補
+                        pendingSeed[docId] = r.value;
+                    }
+                    (cloudHooks[docId] || []).forEach(fn => fn());
+                },
+                (err) => console.error('[Firestore] 讀取失敗 ' + docId + '：', err.code, err.message)
+            );
+            return r;
+        }
+
+        // 整包覆寫（清單、設定用）
+        function cloudSave(docId, value, silent) {
+            const plain = JSON.parse(JSON.stringify(value));
+            cacheSet(docId, plain);
+            if (!db) return Promise.resolve();
+            return db.collection(CLOUD_COLLECTION).doc(docId)
+                .set({ value: plain, updatedAt: Date.now(), updatedBy: (authState.email || authState.uid || '') })
+                .catch(err => {
+                    console.error('[Firestore] 寫入失敗 ' + docId + '：', err.code, err.message);
+                    if (silent) return;
+                    if (err.code === 'permission-denied') {
+                        alert('沒有寫入權限：請確認你已用管理員帳號登入，且該帳號的 UID 已加入 Firestore 的 kmuhAdmins 集合。');
+                    } else {
+                        alert('儲存到雲端失敗：' + err.message + '\n（請按 F12 看主控台訊息）');
+                    }
+                });
+        }
+
+        // 計數器 +1（多人同時點也不會互相蓋掉）
+        function cloudBump(docId, key, localRef) {
+            localRef.value[key] = (localRef.value[key] || 0) + 1;
+            cacheSet(docId, localRef.value);
+            if (!db) return Promise.resolve();
+            return db.collection(CLOUD_COLLECTION).doc(docId).set(
+                { value: { [String(key)]: firebase.firestore.FieldValue.increment(1) }, updatedAt: Date.now() },
+                { merge: true }
+            ).catch(err => console.error('[Firestore] 計數失敗 ' + docId + '：', err.code, err.message));
+        }
+
+        function cloudOnSync(docId, fn) {
+            (cloudHooks[docId] = cloudHooks[docId] || []).push(fn);
+        }
+
         const { createApp, ref, computed } = Vue;
 
         createApp({
@@ -1471,7 +1735,7 @@
                 ];
 
                 // Honor Roll State
-                const honorRollList = ref(JSON.parse(localStorage.getItem('kmuhHonorRollList')) || defaultHonorRollList);
+                const honorRollList = cloudRef('honorRollList', defaultHonorRollList);
                 const editingHonorId = ref(null);
                 const newHonor = ref({
                     name: '',
@@ -1482,7 +1746,7 @@
                 });
 
                 const saveHonorInStorage = () => {
-                    localStorage.setItem('kmuhHonorRollList', JSON.stringify(honorRollList.value));
+                    cloudSave('honorRollList', honorRollList.value);
                 };
 
                 const handlePhotoUpload = (event) => {
@@ -1490,6 +1754,11 @@
                     if (file) {
                         const reader = new FileReader();
                         reader.onload = (e) => {
+                            // Firestore 單筆文件上限約 1MB，照片轉 base64 會變大，先擋一下
+                            if (e.target.result.length > 400000) {
+                                alert('這張照片太大了（建議壓到 300KB 以下，或改用圖片網址）。\n照片會連同資料一起存進 Firestore，單筆上限 1MB。');
+                                return;
+                            }
                             newHonor.value.photo = e.target.result;
                         };
                         reader.readAsDataURL(file);
@@ -1888,138 +2157,237 @@
                 ];
 
                 const showAdminModal = ref(false);
-                const isAdminLoggedIn = ref(false);
                 const loginUsername = ref('');
                 const loginPassword = ref('');
                 const loginError = ref('');
+                const loginBusy = ref(false);
                 const adminTab = ref('marquee');
 
-                // Admin Privilege Management State
-                const defaultAdmins = [
-                    {
-                        id: 'orig-admin-1957',
-                        username: 'KMUH.1957',
-                        password: 'RIS.1957',
-                        empId: '',
-                        empName: '系統管理員',
-                        isOriginal: true
-                    }
-                ];
+                // 登入狀態一律以 Firebase Authentication 為準（唯讀）
+                const isAdminLoggedIn = computed(() => authState.isAdmin);
+                const myUid = computed(() => authState.uid);
+                const myEmail = computed(() => authState.email);
+                const myProfile = computed(() => authState.profile);
 
-                const adminUsers = ref(JSON.parse(localStorage.getItem('kmuhAdminUsers')) || defaultAdmins);
-
-                // Ensure original admin is always present and strictly locked
-                const ensureOriginalAdmin = () => {
-                    const origIdx = adminUsers.value.findIndex(u => u.isOriginal || u.username === 'KMUH.1957');
-                    if (origIdx === -1) {
-                        adminUsers.value.unshift(defaultAdmins[0]);
-                    } else {
-                        adminUsers.value[origIdx] = { ...defaultAdmins[0] };
+                const handleLogin = async () => {
+                    loginError.value = '';
+                    if (!auth || !db) {
+                        loginError.value = '尚未連上 Firebase，請先在 HTML 中填好 firebaseConfig。';
+                        return;
                     }
-                    localStorage.setItem('kmuhAdminUsers', JSON.stringify(adminUsers.value));
+                    const email = toLoginEmail(loginUsername.value);
+                    const pass = loginPassword.value;
+                    if (!email || !pass) {
+                        loginError.value = '請輸入帳號與密碼。';
+                        return;
+                    }
+
+                    loginBusy.value = true;
+                    try {
+                        const cred = await auth.signInWithEmailAndPassword(email, pass);
+                        const snap = await db.collection(ADMIN_COLLECTION).doc(cred.user.uid).get();
+                        if (!snap.exists) {
+                            const uid = cred.user.uid;
+                            await auth.signOut();
+                            loginError.value = '此帳號尚未被授權為管理員。請到 Firestore 的 kmuhAdmins 集合新增一筆文件，文件 ID 填入：' + uid;
+                            console.warn('[授權] 這組帳號的 UID 是：' + uid + '（請複製到 Firestore kmuhAdmins 集合當作文件 ID）');
+                            return;
+                        }
+                        authState.isAdmin = true;
+                        authState.profile = snap.data();
+                        loginPassword.value = '';
+                    } catch (e) {
+                        loginError.value = authErrorMessage(e);
+                    } finally {
+                        loginBusy.value = false;
+                    }
                 };
-                ensureOriginalAdmin();
 
+                const handleForgotPassword = async () => {
+                    loginError.value = '';
+                    const raw = String(loginUsername.value || '').trim();
+                    if (raw.indexOf('@') < 0) {
+                        loginError.value = '重設密碼信只能寄到真實 Email。若你的帳號不是 Email，請聯絡系統管理員在 Firebase 主控台代為重設。';
+                        return;
+                    }
+                    try {
+                        await auth.sendPasswordResetEmail(raw.toLowerCase());
+                        loginError.value = '重設密碼的信件已寄出，請到信箱收信（記得看看垃圾郵件匣）。';
+                    } catch (e) {
+                        loginError.value = authErrorMessage(e);
+                    }
+                };
+
+                const handleLogout = async () => {
+                    loginUsername.value = '';
+                    loginPassword.value = '';
+                    loginError.value = '';
+                    authState.isAdmin = false;
+                    authState.profile = null;
+                    try { await auth.signOut(); } catch (e) { console.error(e); }
+                };
+
+                // ---------- 管理員名單（存在 kmuhAdmins，只有管理員讀得到） ----------
+                const adminUsers = ref([]);
                 const editingAdminId = ref(null);
                 const adminFormError = ref('');
-                const newAdmin = ref({
-                    username: '',
-                    password: '',
-                    empId: '',
-                    empName: ''
-                });
+                const adminFormOk = ref('');
+                const adminBusy = ref(false);
+                const newAdmin = ref({ account: '', password: '', empId: '', empName: '' });
+
+                let adminUnsub = null;
+                const watchAdminList = () => {
+                    if (!db || adminUnsub) return;
+                    adminUnsub = db.collection(ADMIN_COLLECTION).onSnapshot(
+                        (qs) => {
+                            adminUsers.value = qs.docs.map(d => Object.assign({ id: d.id }, d.data()));
+                        },
+                        (err) => console.error('[Firestore] 讀取 kmuhAdmins 失敗：', err.code, err.message)
+                    );
+                };
+                Vue.watch(isAdminLoggedIn, (v) => {
+                    if (v) {
+                        watchAdminList();
+                    } else if (adminUnsub) {
+                        adminUnsub();
+                        adminUnsub = null;
+                        adminUsers.value = [];
+                    }
+                }, { immediate: true });
 
                 const resetAdminForm = () => {
                     editingAdminId.value = null;
                     adminFormError.value = '';
-                    newAdmin.value = {
-                        username: '',
-                        password: '',
-                        empId: '',
-                        empName: ''
-                    };
+                    adminFormOk.value = '';
+                    newAdmin.value = { account: '', password: '', empId: '', empName: '' };
                 };
 
                 const startEditAdmin = (user) => {
-                    if (user.isOriginal) return;
                     editingAdminId.value = user.id;
                     adminFormError.value = '';
+                    adminFormOk.value = '';
                     newAdmin.value = {
-                        username: user.username,
-                        password: user.password,
+                        account: user.account || user.email || '',
+                        password: '',
                         empId: user.empId || '',
                         empName: user.empName || ''
                     };
                 };
 
-                const saveAdminForm = () => {
+                const saveAdminForm = async () => {
                     adminFormError.value = '';
-                    if (!newAdmin.value.username.trim() || !newAdmin.value.password.trim()) {
-                        adminFormError.value = '請填寫管理員帳號與密碼！';
-                        return;
-                    }
+                    adminFormOk.value = '';
 
-                    const dup = adminUsers.value.find(u => u.username === newAdmin.value.username.trim() && u.id !== editingAdminId.value);
-                    if (dup) {
-                        adminFormError.value = '此帳號已存在，請使用不同的帳號名稱！';
-                        return;
-                    }
-
+                    // 編輯：只能改姓名與職編（帳號與密碼由 Firebase Authentication 管理）
                     if (editingAdminId.value) {
-                        const idx = adminUsers.value.findIndex(u => u.id === editingAdminId.value);
-                        if (idx !== -1 && !adminUsers.value[idx].isOriginal) {
-                            adminUsers.value[idx] = {
-                                ...adminUsers.value[idx],
-                                username: newAdmin.value.username.trim(),
-                                password: newAdmin.value.password.trim(),
+                        adminBusy.value = true;
+                        try {
+                            await db.collection(ADMIN_COLLECTION).doc(editingAdminId.value).update({
                                 empId: newAdmin.value.empId.trim(),
                                 empName: newAdmin.value.empName.trim()
-                            };
+                            });
+                            adminFormOk.value = '已更新管理員資料。';
+                            resetAdminForm();
+                        } catch (e) {
+                            adminFormError.value = '更新失敗：' + ((e && e.message) || e);
+                        } finally {
+                            adminBusy.value = false;
                         }
-                    } else {
-                        adminUsers.value.push({
-                            id: 'admin_' + Date.now(),
-                            username: newAdmin.value.username.trim(),
-                            password: newAdmin.value.password.trim(),
+                        return;
+                    }
+
+                    // 新增：在 Firebase Authentication 建立帳號，再把 UID 寫進 kmuhAdmins
+                    const account = String(newAdmin.value.account || '').trim();
+                    const password = String(newAdmin.value.password || '');
+                    if (!account || !password) {
+                        adminFormError.value = '請填寫登入帳號與密碼！';
+                        return;
+                    }
+                    if (password.length < 6) {
+                        adminFormError.value = '密碼至少需要 6 個字元（Firebase 規定）。';
+                        return;
+                    }
+
+                    adminBusy.value = true;
+                    let secondary = null;
+                    try {
+                        // 用第二個 Firebase App 建立帳號，避免把目前登入的管理員擠掉
+                        secondary = firebase.apps.find(a => a.name === 'adminCreator')
+                            || firebase.initializeApp(firebaseConfig, 'adminCreator');
+                        const cred = await secondary.auth()
+                            .createUserWithEmailAndPassword(toLoginEmail(account), password);
+                        const uid = cred.user.uid;
+                        await secondary.auth().signOut();
+
+                        await db.collection(ADMIN_COLLECTION).doc(uid).set({
+                            account: account,
+                            email: toLoginEmail(account),
                             empId: newAdmin.value.empId.trim(),
                             empName: newAdmin.value.empName.trim(),
-                            isOriginal: false
+                            createdAt: Date.now(),
+                            createdBy: authState.email || authState.uid || ''
                         });
-                    }
 
-                    localStorage.setItem('kmuhAdminUsers', JSON.stringify(adminUsers.value));
-                    resetAdminForm();
-                };
-
-                const removeAdmin = (id) => {
-                    const target = adminUsers.value.find(u => u.id === id);
-                    if (target && target.isOriginal) return;
-                    adminUsers.value = adminUsers.value.filter(u => u.id !== id);
-                    localStorage.setItem('kmuhAdminUsers', JSON.stringify(adminUsers.value));
-                };
-
-                const handleLogin = () => {
-                    const inputUser = loginUsername.value.trim();
-                    const inputPass = loginPassword.value.trim();
-                    const found = adminUsers.value.find(u => u.username === inputUser && u.password === inputPass);
-                    if (found) {
-                        isAdminLoggedIn.value = true;
-                        loginError.value = '';
-                    } else {
-                        loginError.value = '帳號或密碼錯誤，請重新確認！';
+                        adminFormOk.value = '已新增管理員「' + account + '」，請把密碼交給本人並提醒儘快自行更改。';
+                        newAdmin.value = { account: '', password: '', empId: '', empName: '' };
+                    } catch (e) {
+                        if (e && e.code === 'auth/email-already-in-use') {
+                            adminFormError.value = '這個帳號已經存在於 Firebase Authentication。請改用其他帳號，或到主控台複製該帳號的 UID，手動新增到 kmuhAdmins 集合。';
+                        } else {
+                            adminFormError.value = authErrorMessage(e);
+                        }
+                        if (secondary) { try { await secondary.auth().signOut(); } catch (x) {} }
+                    } finally {
+                        adminBusy.value = false;
                     }
                 };
 
-                const handleLogout = () => {
-                    isAdminLoggedIn.value = false;
-                    loginUsername.value = '';
-                    loginPassword.value = '';
-                    loginError.value = '';
+                const removeAdmin = async (id) => {
+                    adminFormError.value = '';
+                    adminFormOk.value = '';
+                    if (id === authState.uid) {
+                        adminFormError.value = '不能移除自己的管理權限。';
+                        return;
+                    }
+                    if (adminUsers.value.length <= 1) {
+                        adminFormError.value = '至少要保留一位管理員。';
+                        return;
+                    }
+                    if (!confirm('確定要撤銷這位管理員的權限嗎？\n（撤銷後對方仍可登入，但無法再修改任何內容。若要徹底刪除登入帳號，請到 Firebase 主控台 → Authentication 移除。）')) return;
+                    try {
+                        await db.collection(ADMIN_COLLECTION).doc(id).delete();
+                        adminFormOk.value = '已撤銷該帳號的管理權限。';
+                    } catch (e) {
+                        adminFormError.value = '撤銷失敗：' + ((e && e.message) || e);
+                    }
+                };
+
+                const changeMyPassword = async () => {
+                    adminFormError.value = '';
+                    adminFormOk.value = '';
+                    const pw1 = prompt('請輸入新密碼（至少 6 個字元）：');
+                    if (pw1 === null) return;
+                    if (String(pw1).length < 6) {
+                        adminFormError.value = '密碼至少需要 6 個字元。';
+                        return;
+                    }
+                    const pw2 = prompt('請再輸入一次新密碼確認：');
+                    if (pw2 === null) return;
+                    if (pw1 !== pw2) {
+                        adminFormError.value = '兩次輸入的密碼不一致。';
+                        return;
+                    }
+                    try {
+                        await auth.currentUser.updatePassword(pw1);
+                        adminFormOk.value = '密碼已更新，下次請用新密碼登入。';
+                    } catch (e) {
+                        adminFormError.value = authErrorMessage(e);
+                    }
                 };
 
                 // Marquee State
-                const marqueeSettings = ref(JSON.parse(localStorage.getItem('kmuhMarqueeSettings')) || { enabled: true, speed: 'normal' });
-                const marqueeList = ref(JSON.parse(localStorage.getItem('kmuhMarqueeList')) || defaultMarqueeList);
+                const marqueeSettings = cloudRef('marqueeSettings', { enabled: true, speed: 'normal' });
+                const marqueeList = cloudRef('marqueeList', defaultMarqueeList);
                 const newMarqueeText = ref('');
 
                 const marqueeSpeedClass = computed(() => {
@@ -2029,29 +2397,29 @@
                 });
 
                 const saveMarqueeSettings = () => {
-                    localStorage.setItem('kmuhMarqueeSettings', JSON.stringify(marqueeSettings.value));
+                    cloudSave('marqueeSettings', marqueeSettings.value);
                 };
 
                 const addMarqueeItem = () => {
                     if (newMarqueeText.value.trim()) {
                         marqueeList.value.push(newMarqueeText.value.trim());
                         newMarqueeText.value = '';
-                        localStorage.setItem('kmuhMarqueeList', JSON.stringify(marqueeList.value));
+                        cloudSave('marqueeList', marqueeList.value);
                     }
                 };
 
                 const removeMarqueeItem = (idx) => {
                     marqueeList.value.splice(idx, 1);
-                    localStorage.setItem('kmuhMarqueeList', JSON.stringify(marqueeList.value));
+                    cloudSave('marqueeList', marqueeList.value);
                 };
 
                 const resetMarqueeToDefault = () => {
                     marqueeList.value = [...defaultMarqueeList];
-                    localStorage.setItem('kmuhMarqueeList', JSON.stringify(marqueeList.value));
+                    cloudSave('marqueeList', marqueeList.value);
                 };
 
                 // Conferences State
-                const conferences = ref(JSON.parse(localStorage.getItem('kmuhConferencesList')) || defaultConferences);
+                const conferences = cloudRef('conferencesList', defaultConferences);
                 const newConf = ref({
                     title: "",
                     organizer: "",
@@ -2063,7 +2431,7 @@
                 });
 
                 const saveConferencesInStorage = () => {
-                    localStorage.setItem('kmuhConferencesList', JSON.stringify(conferences.value));
+                    cloudSave('conferencesList', conferences.value);
                 };
 
                 const addConference = () => {
@@ -2094,10 +2462,9 @@
                 };
 
                 // Conference Click Tracker
-                const conferenceClicks = ref(JSON.parse(localStorage.getItem('kmuhConferenceClicks')) || {});
+                const conferenceClicks = cloudRef('conferenceClicks', {});
                 const trackConferenceClick = (id) => {
-                    conferenceClicks.value[id] = (conferenceClicks.value[id] || 0) + 1;
-                    localStorage.setItem('kmuhConferenceClicks', JSON.stringify(conferenceClicks.value));
+                    cloudBump('conferenceClicks', id, conferenceClicks);
                 };
 
                 // Date comparison logic for submission deadlines
@@ -2130,7 +2497,7 @@
                 });
 
                 // Journals Core State
-                const journals = ref(JSON.parse(localStorage.getItem('kmuhJournalsList')) || defaultJournalsList);
+                const journals = cloudRef('journalsList', defaultJournalsList);
 
                 // Admin Journal Editing State
                 const editingJournalId = ref(null);
@@ -2159,7 +2526,7 @@
                 });
 
                 const saveJournalsInStorage = () => {
-                    localStorage.setItem('kmuhJournalsList', JSON.stringify(journals.value));
+                    cloudSave('journalsList', journals.value);
                 };
 
                 const resetJournalForm = () => {
@@ -2311,27 +2678,26 @@
                     saveJournalsInStorage();
                 };
 
-                const journalViews = ref(JSON.parse(localStorage.getItem('kmuhJournalViews')) || {});
-                const journalPortalClicks = ref(JSON.parse(localStorage.getItem('kmuhJournalPortalClicks')) || {});
+                const journalViews = cloudRef('journalViews', {});
+                const journalPortalClicks = cloudRef('journalPortalClicks', {});
 
                 const trackJournalView = (id) => {
-                    journalViews.value[id] = (journalViews.value[id] || 0) + 1;
-                    localStorage.setItem('kmuhJournalViews', JSON.stringify(journalViews.value));
+                    cloudBump('journalViews', id, journalViews);
                 };
 
                 const trackPortalClick = (id) => {
-                    journalPortalClicks.value[id] = (journalPortalClicks.value[id] || 0) + 1;
-                    localStorage.setItem('kmuhJournalPortalClicks', JSON.stringify(journalPortalClicks.value));
+                    cloudBump('journalPortalClicks', id, journalPortalClicks);
                 };
 
                 const resetSuccessMsg = ref('');
                 const resetStats = () => {
+                    if (!confirm('確定要清除所有瀏覽與點擊統計嗎？此動作會同步清除雲端資料，所有人都會歸零。')) return;
                     journalViews.value = {};
                     journalPortalClicks.value = {};
                     conferenceClicks.value = {};
-                    localStorage.removeItem('kmuhJournalViews');
-                    localStorage.removeItem('kmuhJournalPortalClicks');
-                    localStorage.removeItem('kmuhConferenceClicks');
+                    cloudSave('journalViews', {});
+                    cloudSave('journalPortalClicks', {});
+                    cloudSave('conferenceClicks', {});
                     resetSuccessMsg.value = '數據已成功重置！';
                     setTimeout(() => {
                         resetSuccessMsg.value = '';
@@ -2458,19 +2824,27 @@
                     loginUsername,
                     loginPassword,
                     loginError,
+                    loginBusy,
                     adminTab,
                     handleLogin,
                     handleLogout,
+                    handleForgotPassword,
+                    myUid,
+                    myEmail,
+                    myProfile,
 
                     // Admin Privilege Management
                     adminUsers,
                     editingAdminId,
                     adminFormError,
+                    adminFormOk,
+                    adminBusy,
                     newAdmin,
                     resetAdminForm,
                     startEditAdmin,
                     saveAdminForm,
                     removeAdmin,
+                    changeMyPassword,
 
                     // Marquee
                     marqueeSettings,
