@@ -10,6 +10,10 @@
     
     <!-- Vue 3 CDN -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <!-- Firebase SDK (compat 版，可直接用 <script> 載入) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -1429,6 +1433,111 @@
     </div>
 
     <script>
+        /* ==========================================================
+           【步驟 1】把下面這段換成你自己的 Firebase 設定
+
+           取得方式：
+             Firebase 主控台 → 齒輪(專案設定) → 一般 → 你的應用程式
+             → 選「網頁應用程式」→ 複製 firebaseConfig 整段貼上取代
+           （如果還沒建立網頁應用程式，按 </> 圖示新增一個即可）
+           ========================================================== */
+        const firebaseConfig = {
+  apiKey: "AIzaSyBoMQtva1Sds9_4jzDM7HMllQs2lVKbIyI",
+  authDomain: "kmuhris-web.firebaseapp.com",
+  projectId: "kmuhris-web",
+  storageBucket: "kmuhris-web.firebasestorage.app",
+  messagingSenderId: "669378150137",
+  appId: "1:669378150137:web:91a1aa30061124c7b7ac28",
+  measurementId: "G-J1E9J49GZG"
+};
+
+        /* ---------- 以下不用改 ---------- */
+        const CLOUD_COLLECTION = 'kmuhData';   // 對應你設定的 Firestore 規則
+        let db = null;
+        const cloudHooks = {};
+
+        function showSetupBanner(msg) {
+            const bar = document.createElement('div');
+            bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b91c1c;color:#fff;padding:10px 16px;font-size:13px;text-align:center;font-family:sans-serif';
+            bar.textContent = msg;
+            document.addEventListener('DOMContentLoaded', () => document.body.appendChild(bar));
+            if (document.body) document.body.appendChild(bar);
+        }
+
+        if (String(firebaseConfig.apiKey).indexOf('PASTE_') === 0) {
+            showSetupBanner('⚠️ 尚未填入 Firebase 設定：請打開 index.html，把 firebaseConfig 換成你專案的設定值。目前資料只會存在這台電腦。');
+            console.warn('[Firebase] firebaseConfig 尚未填寫，雲端同步未啟用。');
+        } else {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                console.log('[Firebase] 初始化成功，專案：', firebaseConfig.projectId);
+            } catch (e) {
+                console.error('[Firebase] 初始化失敗：', e);
+                showSetupBanner('⚠️ Firebase 初始化失敗，請檢查 firebaseConfig 是否正確（詳細訊息請看瀏覽器主控台 F12）。');
+            }
+        }
+
+        // 本機快取：離線或雲端還沒回應時先顯示上次的內容，畫面不會空白
+        function cacheGet(docId, fallback) {
+            try {
+                const raw = localStorage.getItem('kmuhCache_' + docId);
+                return raw ? JSON.parse(raw) : fallback;
+            } catch (e) { return fallback; }
+        }
+        function cacheSet(docId, value) {
+            try { localStorage.setItem('kmuhCache_' + docId, JSON.stringify(value)); } catch (e) {}
+        }
+
+        // 建立一個會自動跟 Firestore 雙向同步的 ref
+        function cloudRef(docId, defaultValue) {
+            const r = Vue.ref(cacheGet(docId, defaultValue));
+            if (!db) return r;
+
+            db.collection(CLOUD_COLLECTION).doc(docId).onSnapshot(
+                (snap) => {
+                    if (snap.exists && snap.data() && snap.data().value !== undefined) {
+                        r.value = snap.data().value;
+                        cacheSet(docId, r.value);
+                    } else {
+                        // 雲端還沒有這筆資料 → 用目前的內容當作初始值寫上去
+                        cloudSave(docId, r.value);
+                    }
+                    (cloudHooks[docId] || []).forEach(fn => fn());
+                },
+                (err) => console.error('[Firestore] 讀取失敗 ' + docId + '：', err.code, err.message)
+            );
+            return r;
+        }
+
+        // 整包覆寫（清單、設定用）
+        function cloudSave(docId, value) {
+            const plain = JSON.parse(JSON.stringify(value));
+            cacheSet(docId, plain);
+            if (!db) return Promise.resolve();
+            return db.collection(CLOUD_COLLECTION).doc(docId)
+                .set({ value: plain, updatedAt: Date.now() })
+                .catch(err => {
+                    console.error('[Firestore] 寫入失敗 ' + docId + '：', err.code, err.message);
+                    alert('儲存到雲端失敗：' + err.message + '\n（請按 F12 看主控台訊息）');
+                });
+        }
+
+        // 計數器 +1（統計用，多人同時點也不會互相蓋掉）
+        function cloudBump(docId, key, localRef) {
+            localRef.value[key] = (localRef.value[key] || 0) + 1;
+            cacheSet(docId, localRef.value);
+            if (!db) return Promise.resolve();
+            return db.collection(CLOUD_COLLECTION).doc(docId).set(
+                { value: { [String(key)]: firebase.firestore.FieldValue.increment(1) }, updatedAt: Date.now() },
+                { merge: true }
+            ).catch(err => console.error('[Firestore] 計數失敗 ' + docId + '：', err.code, err.message));
+        }
+
+        function cloudOnSync(docId, fn) {
+            (cloudHooks[docId] = cloudHooks[docId] || []).push(fn);
+        }
+
         const { createApp, ref, computed } = Vue;
 
         createApp({
@@ -1467,7 +1576,7 @@
                 ];
 
                 // Honor Roll State
-                const honorRollList = ref(JSON.parse(localStorage.getItem('kmuhHonorRollList')) || defaultHonorRollList);
+                const honorRollList = cloudRef('honorRollList', defaultHonorRollList);
                 const editingHonorId = ref(null);
                 const newHonor = ref({
                     name: '',
@@ -1478,7 +1587,7 @@
                 });
 
                 const saveHonorInStorage = () => {
-                    localStorage.setItem('kmuhHonorRollList', JSON.stringify(honorRollList.value));
+                    cloudSave('honorRollList', honorRollList.value);
                 };
 
                 const handlePhotoUpload = (event) => {
@@ -1486,6 +1595,11 @@
                     if (file) {
                         const reader = new FileReader();
                         reader.onload = (e) => {
+                            // Firestore 單筆文件上限約 1MB，照片轉成 base64 會變大，先擋一下
+                            if (e.target.result.length > 400000) {
+                                alert('這張照片太大了（建議壓到 300KB 以下，或改用圖片網址）。\n照片會連同資料一起存進 Firestore，單筆上限 1MB。');
+                                return;
+                            }
                             newHonor.value.photo = e.target.result;
                         };
                         reader.readAsDataURL(file);
@@ -1902,19 +2016,25 @@
                     }
                 ];
 
-                const adminUsers = ref(JSON.parse(localStorage.getItem('kmuhAdminUsers')) || defaultAdmins);
+                const adminUsers = cloudRef('adminUsers', defaultAdmins);
 
                 // Ensure original admin is always present and strictly locked
                 const ensureOriginalAdmin = () => {
+                    if (!Array.isArray(adminUsers.value)) adminUsers.value = [];
                     const origIdx = adminUsers.value.findIndex(u => u.isOriginal || u.username === 'KMUH.1957');
+                    let changed = false;
                     if (origIdx === -1) {
-                        adminUsers.value.unshift(defaultAdmins[0]);
-                    } else {
+                        adminUsers.value.unshift({ ...defaultAdmins[0] });
+                        changed = true;
+                    } else if (JSON.stringify(adminUsers.value[origIdx]) !== JSON.stringify(defaultAdmins[0])) {
                         adminUsers.value[origIdx] = { ...defaultAdmins[0] };
+                        changed = true;
                     }
-                    localStorage.setItem('kmuhAdminUsers', JSON.stringify(adminUsers.value));
+                    // 只有真的有變動才寫回雲端，避免與 onSnapshot 互相觸發無限迴圈
+                    if (changed) cloudSave('adminUsers', adminUsers.value);
                 };
                 ensureOriginalAdmin();
+                cloudOnSync('adminUsers', ensureOriginalAdmin);
 
                 const editingAdminId = ref(null);
                 const adminFormError = ref('');
@@ -1983,7 +2103,7 @@
                         });
                     }
 
-                    localStorage.setItem('kmuhAdminUsers', JSON.stringify(adminUsers.value));
+                    cloudSave('adminUsers', adminUsers.value);
                     resetAdminForm();
                 };
 
@@ -1991,7 +2111,7 @@
                     const target = adminUsers.value.find(u => u.id === id);
                     if (target && target.isOriginal) return;
                     adminUsers.value = adminUsers.value.filter(u => u.id !== id);
-                    localStorage.setItem('kmuhAdminUsers', JSON.stringify(adminUsers.value));
+                    cloudSave('adminUsers', adminUsers.value);
                 };
 
                 const handleLogin = () => {
@@ -2014,8 +2134,8 @@
                 };
 
                 // Marquee State
-                const marqueeSettings = ref(JSON.parse(localStorage.getItem('kmuhMarqueeSettings')) || { enabled: true, speed: 'normal' });
-                const marqueeList = ref(JSON.parse(localStorage.getItem('kmuhMarqueeList')) || defaultMarqueeList);
+                const marqueeSettings = cloudRef('marqueeSettings', { enabled: true, speed: 'normal' });
+                const marqueeList = cloudRef('marqueeList', defaultMarqueeList);
                 const newMarqueeText = ref('');
 
                 const marqueeSpeedClass = computed(() => {
@@ -2025,29 +2145,29 @@
                 });
 
                 const saveMarqueeSettings = () => {
-                    localStorage.setItem('kmuhMarqueeSettings', JSON.stringify(marqueeSettings.value));
+                    cloudSave('marqueeSettings', marqueeSettings.value);
                 };
 
                 const addMarqueeItem = () => {
                     if (newMarqueeText.value.trim()) {
                         marqueeList.value.push(newMarqueeText.value.trim());
                         newMarqueeText.value = '';
-                        localStorage.setItem('kmuhMarqueeList', JSON.stringify(marqueeList.value));
+                        cloudSave('marqueeList', marqueeList.value);
                     }
                 };
 
                 const removeMarqueeItem = (idx) => {
                     marqueeList.value.splice(idx, 1);
-                    localStorage.setItem('kmuhMarqueeList', JSON.stringify(marqueeList.value));
+                    cloudSave('marqueeList', marqueeList.value);
                 };
 
                 const resetMarqueeToDefault = () => {
                     marqueeList.value = [...defaultMarqueeList];
-                    localStorage.setItem('kmuhMarqueeList', JSON.stringify(marqueeList.value));
+                    cloudSave('marqueeList', marqueeList.value);
                 };
 
                 // Conferences State
-                const conferences = ref(JSON.parse(localStorage.getItem('kmuhConferencesList')) || defaultConferences);
+                const conferences = cloudRef('conferencesList', defaultConferences);
                 const newConf = ref({
                     title: "",
                     organizer: "",
@@ -2059,7 +2179,7 @@
                 });
 
                 const saveConferencesInStorage = () => {
-                    localStorage.setItem('kmuhConferencesList', JSON.stringify(conferences.value));
+                    cloudSave('conferencesList', conferences.value);
                 };
 
                 const addConference = () => {
@@ -2090,10 +2210,9 @@
                 };
 
                 // Conference Click Tracker
-                const conferenceClicks = ref(JSON.parse(localStorage.getItem('kmuhConferenceClicks')) || {});
+                const conferenceClicks = cloudRef('conferenceClicks', {});
                 const trackConferenceClick = (id) => {
-                    conferenceClicks.value[id] = (conferenceClicks.value[id] || 0) + 1;
-                    localStorage.setItem('kmuhConferenceClicks', JSON.stringify(conferenceClicks.value));
+                    cloudBump('conferenceClicks', id, conferenceClicks);
                 };
 
                 // Date comparison logic for submission deadlines
@@ -2126,7 +2245,7 @@
                 });
 
                 // Journals Core State
-                const journals = ref(JSON.parse(localStorage.getItem('kmuhJournalsList')) || defaultJournalsList);
+                const journals = cloudRef('journalsList', defaultJournalsList);
 
                 // Admin Journal Editing State
                 const editingJournalId = ref(null);
@@ -2155,7 +2274,7 @@
                 });
 
                 const saveJournalsInStorage = () => {
-                    localStorage.setItem('kmuhJournalsList', JSON.stringify(journals.value));
+                    cloudSave('journalsList', journals.value);
                 };
 
                 const resetJournalForm = () => {
@@ -2307,26 +2426,25 @@
                     saveJournalsInStorage();
                 };
 
-                const journalViews = ref(JSON.parse(localStorage.getItem('kmuhJournalViews')) || {});
-                const journalPortalClicks = ref(JSON.parse(localStorage.getItem('kmuhJournalPortalClicks')) || {});
+                const journalViews = cloudRef('journalViews', {});
+                const journalPortalClicks = cloudRef('journalPortalClicks', {});
 
                 const trackJournalView = (id) => {
-                    journalViews.value[id] = (journalViews.value[id] || 0) + 1;
-                    localStorage.setItem('kmuhJournalViews', JSON.stringify(journalViews.value));
+                    cloudBump('journalViews', id, journalViews);
                 };
 
                 const trackPortalClick = (id) => {
-                    journalPortalClicks.value[id] = (journalPortalClicks.value[id] || 0) + 1;
-                    localStorage.setItem('kmuhJournalPortalClicks', JSON.stringify(journalPortalClicks.value));
+                    cloudBump('journalPortalClicks', id, journalPortalClicks);
                 };
 
                 const resetStats = () => {
+                    if (!confirm('確定要清除所有瀏覽與點擊統計嗎？此動作會同步清除雲端資料。')) return;
                     journalViews.value = {};
                     journalPortalClicks.value = {};
                     conferenceClicks.value = {};
-                    localStorage.removeItem('kmuhJournalViews');
-                    localStorage.removeItem('kmuhJournalPortalClicks');
-                    localStorage.removeItem('kmuhConferenceClicks');
+                    cloudSave('journalViews', {});
+                    cloudSave('journalPortalClicks', {});
+                    cloudSave('conferenceClicks', {});
                 };
 
                 const searchQuery = ref('');
