@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <!-- =============================================================
@@ -948,9 +949,6 @@
                             <div class="space-y-3">
                                 <div class="flex items-center justify-between">
                                     <span class="font-bold text-slate-800 text-sm">目前播放中公告 ({{ marqueeList.length }} 則)</span>
-                                    <button @click="resetMarqueeToDefault" class="text-rose-600 hover:underline text-[11px] font-semibold cursor-pointer">
-                                        重置為預設公告範本
-                                    </button>
                                 </div>
 
                                 <div v-if="marqueeList.length === 0" class="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-400">
@@ -1049,9 +1047,6 @@
                             <div class="space-y-3">
                                 <div class="flex items-center justify-between">
                                     <span class="font-bold text-slate-800 text-sm">目前榮譽榜名單 ({{ honorRollList.length }} 筆)</span>
-                                    <button @click="resetHonorToDefault" class="text-rose-600 hover:underline text-[11px] font-semibold cursor-pointer">
-                                        重置為預設榮譽榜範本
-                                    </button>
                                 </div>
 
                                 <div v-if="honorRollList.length === 0" class="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-400">
@@ -1129,9 +1124,6 @@
                             <div class="space-y-3">
                                 <div class="flex items-center justify-between">
                                     <span class="font-bold text-slate-800 text-sm">目前已發布研討會 ({{ conferences.length }} 則)</span>
-                                    <button @click="resetConferencesToDefault" class="text-rose-600 hover:underline text-[11px] font-semibold cursor-pointer">
-                                        重置為預設研討會範本
-                                    </button>
                                 </div>
 
                                 <div v-if="conferences.length === 0" class="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-400">
@@ -1300,9 +1292,6 @@
                             <div class="space-y-3">
                                 <div class="flex items-center justify-between">
                                     <span class="font-bold text-slate-800 text-sm">目前收錄期刊 ({{ journals.length }} 本)</span>
-                                    <button @click="resetJournalsToDefault" class="text-rose-600 hover:underline text-[11px] font-semibold cursor-pointer">
-                                        重置為預設期刊範本
-                                    </button>
                                 </div>
 
                                 <div v-if="journals.length === 0" class="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-400">
@@ -1821,11 +1810,6 @@
 
                 const removeHonorItem = (id) => {
                     honorRollList.value = honorRollList.value.filter(h => h.id !== id);
-                    saveHonorInStorage();
-                };
-
-                const resetHonorToDefault = () => {
-                    honorRollList.value = [...defaultHonorRollList];
                     saveHonorInStorage();
                 };
 
@@ -2413,11 +2397,6 @@
                     cloudSave('marqueeList', marqueeList.value);
                 };
 
-                const resetMarqueeToDefault = () => {
-                    marqueeList.value = [...defaultMarqueeList];
-                    cloudSave('marqueeList', marqueeList.value);
-                };
-
                 // Conferences State
                 const conferences = cloudRef('conferencesList', defaultConferences);
                 const newConf = ref({
@@ -2453,11 +2432,6 @@
 
                 const removeConference = (id) => {
                     conferences.value = conferences.value.filter(c => c.id !== id);
-                    saveConferencesInStorage();
-                };
-
-                const resetConferencesToDefault = () => {
-                    conferences.value = [...defaultConferences];
                     saveConferencesInStorage();
                 };
 
@@ -2673,11 +2647,6 @@
                     saveJournalsInStorage();
                 };
 
-                const resetJournalsToDefault = () => {
-                    journals.value = [...defaultJournalsList];
-                    saveJournalsInStorage();
-                };
-
                 const journalViews = cloudRef('journalViews', {});
                 const journalPortalClicks = cloudRef('journalPortalClicks', {});
 
@@ -2794,14 +2763,12 @@
                     startEditHonor,
                     saveHonorForm,
                     removeHonorItem,
-                    resetHonorToDefault,
 
                     // Conferences
                     conferences,
                     newConf,
                     addConference,
                     removeConference,
-                    resetConferencesToDefault,
                     conferenceClicks,
                     trackConferenceClick,
                     isConferenceExpired,
@@ -2816,7 +2783,6 @@
                     startEditJournal,
                     saveJournalForm,
                     removeJournal,
-                    resetJournalsToDefault,
 
                     // Auth
                     showAdminModal,
@@ -2854,7 +2820,6 @@
                     saveMarqueeSettings,
                     addMarqueeItem,
                     removeMarqueeItem,
-                    resetMarqueeToDefault,
 
                     // Search & Filter
                     searchQuery,
